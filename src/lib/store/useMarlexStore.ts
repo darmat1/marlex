@@ -368,7 +368,7 @@ export const useMarlexStore = create<MarlexState>()(
             ...slide,
             photoUrl: assignedImg,
             photoOpacity: idx === 0 ? 90 : 75,
-            textPosition: idx === 0 ? 'bottom' : (idx % 2 === 0 ? 'bottom' : 'top'),
+            textPosition: (idx === 0 ? 'bottom' : (idx % 2 === 0 ? 'bottom' : 'top')) as TextPositionMode,
             elements: undefined,
           };
         });
@@ -406,7 +406,7 @@ export const useMarlexStore = create<MarlexState>()(
               ...slide,
               photoUrl: projectImages[idx % projectImages.length],
               photoOpacity: idx === 0 ? 90 : 75,
-              textPosition: idx === 0 ? 'bottom' : (idx % 2 === 0 ? 'bottom' : 'top'),
+              textPosition: (idx === 0 ? 'bottom' : (idx % 2 === 0 ? 'bottom' : 'top')) as TextPositionMode,
               elements: undefined,
             }));
           } else {

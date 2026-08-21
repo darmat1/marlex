@@ -82,7 +82,7 @@ export const MultiChannelTabs: React.FC = () => {
                 Канал: <b className="text-sky-400">{activeProfile.telegramChannel}</b>
               </span>
               <button
-                onClick={() => handleCopy(currentResult.telegramPost, 'tg')}
+                onClick={() => handleCopy(currentResult.telegramPost || '', 'tg')}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-400 text-zinc-950 font-bold text-xs transition-colors shadow"
               >
                 {copiedTab === 'tg' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
@@ -92,12 +92,12 @@ export const MultiChannelTabs: React.FC = () => {
 
             {/* Telegram Message Bubble Simulator */}
             <div className="bg-[#182533] border border-[#2b394a] rounded-2xl p-5 shadow-xl text-zinc-100 font-sans text-sm leading-relaxed whitespace-pre-wrap">
-              {currentResult.telegramPost}
+              {currentResult.telegramPost || ''}
             </div>
 
             <textarea
               rows={8}
-              value={currentResult.telegramPost}
+              value={currentResult.telegramPost || ''}
               onChange={(e) => updateChannelText('telegramPost', e.target.value)}
               className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-xs font-mono text-zinc-300 focus:outline-none focus:border-sky-500/50"
               placeholder="Редактировать текст Telegram..."
@@ -113,7 +113,7 @@ export const MultiChannelTabs: React.FC = () => {
                 Профиль: <b className="text-blue-400">{activeProfile.name}</b>
               </span>
               <button
-                onClick={() => handleCopy(currentResult.linkedInPost, 'li')}
+                onClick={() => handleCopy(currentResult.linkedInPost || '', 'li')}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500 hover:bg-blue-400 text-zinc-950 font-bold text-xs transition-colors shadow"
               >
                 {copiedTab === 'li' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
@@ -125,7 +125,7 @@ export const MultiChannelTabs: React.FC = () => {
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 shadow-xl">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center font-bold text-amber-400 text-sm">
-                  MS
+                  {activeProfile.name ? activeProfile.name[0] : 'U'}
                 </div>
                 <div>
                   <div className="font-semibold text-zinc-200 text-sm">{activeProfile.name}</div>
@@ -133,7 +133,7 @@ export const MultiChannelTabs: React.FC = () => {
                 </div>
               </div>
               <div className="text-zinc-200 text-xs leading-relaxed whitespace-pre-wrap mb-4">
-                {currentResult.linkedInPost}
+                {currentResult.linkedInPost || ''}
               </div>
               <div className="p-3 bg-zinc-950 rounded-lg border border-zinc-800 flex items-center justify-between text-xs text-zinc-400">
                 <span>📄 Прикреплен документ: {currentResult.title}_LinkedIn.pdf</span>
@@ -151,7 +151,7 @@ export const MultiChannelTabs: React.FC = () => {
                 Аккаунт: <b className="text-zinc-200">@{activeProfile.threadsHandle}</b>
               </span>
               <button
-                onClick={() => handleCopy(currentResult.threadsPosts.join('\n\n---\n\n'), 'threads')}
+                onClick={() => handleCopy((currentResult.threadsPosts || []).join('\n\n---\n\n'), 'threads')}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-200 hover:bg-white text-zinc-950 font-bold text-xs transition-colors shadow"
               >
                 {copiedTab === 'threads' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
@@ -161,13 +161,13 @@ export const MultiChannelTabs: React.FC = () => {
 
             {/* Threads Thread Visualizer */}
             <div className="flex flex-col gap-3">
-              {currentResult.threadsPosts.map((post, idx) => (
+              {(currentResult.threadsPosts || []).map((post, idx) => (
                 <div key={idx} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex gap-3 shadow-md">
                   <div className="flex flex-col items-center">
                     <div className="w-7 h-7 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-[10px] font-bold text-zinc-300">
                       {idx + 1}
                     </div>
-                    {idx < currentResult.threadsPosts.length - 1 && (
+                    {idx < (currentResult.threadsPosts?.length || 0) - 1 && (
                       <div className="w-[1.5px] flex-1 bg-zinc-800 my-1" />
                     )}
                   </div>

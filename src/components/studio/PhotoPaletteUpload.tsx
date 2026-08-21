@@ -16,8 +16,10 @@ export const PhotoPaletteUpload: React.FC = () => {
     currentResult,
     activeSlideIndex,
     setSlidePhoto,
+    bgPhotoUrl,
   } = useMarlexStore();
 
+  const activeSlide = currentResult?.slides[activeSlideIndex];
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleMultiFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
