@@ -99,13 +99,22 @@ function createWindow() {
 
   const isDev = process.env.NODE_ENV !== 'production' && !app.isPackaged;
 
-  if (isDev) {
-    mainWindow.loadURL('http://localhost:5174');
-    mainWindow.webContents.on('did-fail-load', () => {
+  mainWindow.webContents.on('console-message', (_, level, message, line, sourceId) => {
+    console.log(`[Renderer Log lvl=${level}]: ${message} (source: ${sourceId}:${line})`);
+  });
+
+  mainWindow.webContents.on('did-fail-load', (_, errorCode, errorDescription, validatedURL) => {
+    console.error(`[Electron Load Error ${errorCode}]: ${errorDescription} URL: ${validatedURL}`);
+    if (isDev) {
       setTimeout(() => {
-        mainWindow?.loadURL('http://localhost:5174');
-      }, 1200);
-    });
+        mainWindow?.loadURL('http://127.0.0.1:5174');
+      }, 1000);
+    }
+  });
+
+  if (isDev) {
+    mainWindow.loadURL('http://127.0.0.1:5174');
+    mainWindow.webContents.openDevTools();
   } else {
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
   }
