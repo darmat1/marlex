@@ -100,10 +100,10 @@ function createWindow() {
   const isDev = process.env.NODE_ENV !== 'production' && !app.isPackaged;
 
   if (isDev) {
-    mainWindow.loadURL('http://localhost:5173');
+    mainWindow.loadURL('http://localhost:5174');
     mainWindow.webContents.on('did-fail-load', () => {
       setTimeout(() => {
-        mainWindow?.loadURL('http://localhost:5173');
+        mainWindow?.loadURL('http://localhost:5174');
       }, 1200);
     });
   } else {

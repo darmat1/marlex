@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "dev:electron": "tsc -p electron/tsconfig.json && concurrently -k \"vite\" \"wait-on tcp:5173 && electron .\"",
+    "dev:electron": "tsc -p electron/tsconfig.json && concurrently -k \"vite\" \"wait-on tcp:5174 && electron .\"",
     "build:electron": "vite build && tsc -p electron/tsconfig.json && electron-builder",
     "server:dev": "tsx server/src/index.ts"
   },
