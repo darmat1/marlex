@@ -13,6 +13,7 @@ export function App() {
   const [activeTab, setActiveTab] = useState<'studio' | 'channels' | 'history'>('studio');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [authTimedOut, setAuthTimedOut] = useState(false);
+  const [isOfflineMode, setIsOfflineMode] = useState(false);
 
   const { syncUserWithProjects } = useMarlexStore();
 
@@ -32,7 +33,7 @@ export function App() {
   }, []);
 
   // 1. Loading splash screen while verifying session with Better Auth / Supabase
-  if (isPending && !authTimedOut) {
+  if (isPending && !authTimedOut && !isOfflineMode) {
     return (
       <div className="flex flex-col items-center justify-center h-screen w-screen bg-zinc-950 text-zinc-100 select-none font-sans">
         <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center shadow-2xl shadow-amber-500/20 font-black text-zinc-950 text-3xl mb-6 animate-pulse">
@@ -47,11 +48,19 @@ export function App() {
   }
 
   // 2. Authentication Gate: If NOT logged in, show AuthScreen
-  if (!session?.user) {
+  if (!session?.user && !isOfflineMode) {
     return (
       <AuthScreen
         onSuccess={() => {
           refetch();
+        }}
+        onOfflineContinue={() => {
+          setIsOfflineMode(true);
+          syncUserWithProjects({
+            id: 'usr_local',
+            name: 'Локальный пользователь',
+            email: 'local@marlex.studio',
+          });
         }}
       />
     );
@@ -62,7 +71,7 @@ export function App() {
     <div className="flex flex-col h-screen w-screen bg-zinc-950 text-zinc-100 overflow-hidden font-sans">
       {/* Top Application Bar with User Profile */}
       <Header
-        user={session.user}
+        user={session?.user || { id: 'usr_local', name: 'Локальный пользователь', email: 'local@marlex.studio' }}
         onOpenSettings={() => setIsSettingsOpen(true)}
         activeTab={activeTab}
         setActiveTab={setActiveTab}

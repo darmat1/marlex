@@ -93,6 +93,7 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
+      webSecurity: false,
     },
   });
 
@@ -100,6 +101,11 @@ function createWindow() {
 
   if (isDev) {
     mainWindow.loadURL('http://localhost:5180');
+    mainWindow.webContents.on('did-fail-load', () => {
+      setTimeout(() => {
+        mainWindow?.loadURL('http://localhost:5180');
+      }, 1200);
+    });
   } else {
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
   }

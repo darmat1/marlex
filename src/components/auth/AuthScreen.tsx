@@ -4,9 +4,10 @@ import { signIn, signUp } from '../../lib/auth-client';
 
 interface AuthScreenProps {
   onSuccess: () => void;
+  onOfflineContinue?: () => void;
 }
 
-export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
+export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onOfflineContinue }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -155,7 +156,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-2 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-zinc-950 font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition-all disabled:opacity-50"
+            className="w-full mt-2 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-zinc-950 font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition-all disabled:opacity-50 cursor-pointer"
           >
             {loading ? (
               <span>Обработка...</span>
@@ -172,6 +173,19 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
             )}
           </button>
         </form>
+
+        {/* Offline / Local mode continue */}
+        {onOfflineContinue && (
+          <div className="mt-3 text-center">
+            <button
+              type="button"
+              onClick={onOfflineContinue}
+              className="text-xs text-zinc-400 hover:text-amber-400 transition-colors cursor-pointer py-1 underline underline-offset-4"
+            >
+              Продолжить локально (без синхронизации) →
+            </button>
+          </div>
+        )}
 
         {/* Supabase Security Badge */}
         <div className="mt-6 pt-4 border-t border-zinc-800/80 flex items-center justify-center gap-2 text-[11px] text-zinc-500">
