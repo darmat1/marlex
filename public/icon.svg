@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Background Squircle Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1c1917" />
+      <stop offset="50%" stop-color="#0c0a09" />
+      <stop offset="100%" stop-color="#000000" />
+    </linearGradient>
+
+    <!-- Glass Rim Inner Glow -->
+    <linearGradient id="rimGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="rgba(245, 158, 11, 0.4)" />
+      <stop offset="40%" stop-color="rgba(255, 255, 255, 0.15)" />
+      <stop offset="100%" stop-color="rgba(217, 119, 6, 0.2)" />
+    </linearGradient>
+
+    <!-- Golden Letter M Gradient (Left Pillar) -->
+    <linearGradient id="goldLeft" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE047" />
+      <stop offset="40%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#B45309" />
+    </linearGradient>
+
+    <!-- Golden Letter M Gradient (Center Diagonals) -->
+    <linearGradient id="goldCenter" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#D97706" />
+      <stop offset="50%" stop-color="#FBBF24" />
+      <stop offset="100%" stop-color="#FEF08A" />
+    </linearGradient>
+
+    <!-- Golden Letter M Gradient (Right Pillar) -->
+    <linearGradient id="goldRight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F59E0B" />
+      <stop offset="60%" stop-color="#D97706" />
+      <stop offset="100%" stop-color="#78350F" />
+    </linearGradient>
+
+    <!-- Glow Filter -->
+    <filter id="amberGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="16" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <!-- Drop Shadow Filter -->
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="18" stdDeviation="24" flood-color="#000000" flood-opacity="0.65" />
+    </filter>
+  </defs>
+
+  <!-- Base macOS Squircle Container -->
+  <g filter="url(#shadow)">
+    <!-- Base Dark Tile -->
+    <rect x="32" y="32" width="448" height="448" rx="104" fill="url(#bgGrad)" />
+    
+    <!-- Subtle Inner Border / Glass Rim -->
+    <rect x="33" y="33" width="446" height="446" rx="103" fill="none" stroke="url(#rimGrad)" stroke-width="2.5" />
+
+    <!-- Ambient Glowing Orb behind M -->
+    <circle cx="256" cy="256" r="140" fill="#F59E0B" opacity="0.12" filter="url(#amberGlow)" />
+
+    <!-- Sleek 3D Geometric Letter M -->
+    <g filter="url(#amberGlow)" transform="translate(0, 4)">
+      <!-- Left Stem -->
+      <path d="M 120 370 L 120 162 C 120 150 134 144 143 152 L 188 192 L 188 370 C 188 376 182 380 176 380 L 132 380 C 125 380 120 376 120 370 Z" fill="url(#goldLeft)" />
+
+      <!-- Left-to-Center Diagonal Ribbon -->
+      <path d="M 184 188 L 256 268 L 256 312 L 184 238 Z" fill="#92400E" opacity="0.7" />
+      <path d="M 188 192 L 256 270 L 256 218 L 202 166 C 195 159 184 164 184 174 Z" fill="url(#goldCenter)" />
+
+      <!-- Center-to-Right Diagonal Ribbon -->
+      <path d="M 256 218 L 310 166 C 318 159 328 164 328 174 L 328 192 L 256 270 Z" fill="url(#goldLeft)" />
+      <path d="M 256 268 L 328 188 L 328 238 L 256 312 Z" fill="#78350F" opacity="0.8" />
+
+      <!-- Right Stem -->
+      <path d="M 392 370 L 392 162 C 392 150 378 144 369 152 L 324 192 L 324 370 C 324 376 330 380 336 380 L 380 380 C 387 380 392 376 392 370 Z" fill="url(#goldRight)" />
+
+      <!-- Accent Top Crown Dots / Sparkles -->
+      <circle cx="256" cy="144" r="8" fill="#FDE047" />
+    </g>
+
+    <!-- Glass Top Reflection Arc -->
+    <path d="M 40 136 C 40 80 84 36 140 36 L 372 36 C 428 36 472 80 472 136 C 372 170 140 170 40 136 Z" fill="rgba(255, 255, 255, 0.04)" />
+  </g>
+</svg>

@@ -1,0 +1,71 @@
+{
+  "name": "marlex",
+  "version": "0.1.0",
+  "description": "Marlex — Autonomous Content Factory & Carousel Studio for macOS",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "dev:electron": "tsc -p electron/tsconfig.json && concurrently -k \"vite\" \"wait-on tcp:5180 && electron .\"",
+    "build:electron": "vite build && tsc -p electron/tsconfig.json && electron-builder",
+    "server:dev": "tsx server/src/index.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.36.3",
+    "@google/generative-ai": "^0.24.0",
+    "@hono/node-server": "^2.1.1",
+    "better-auth": "^1.1.20",
+    "clsx": "^2.1.1",
+    "colorthief": "^2.6.0",
+    "dotenv": "^16.4.7",
+    "drizzle-orm": "^0.39.3",
+    "hono": "^4.7.1",
+    "jspdf": "^2.5.2",
+    "jszip": "^3.10.1",
+    "lucide-react": "^0.475.0",
+    "openai": "^4.85.4",
+    "postgres": "^3.4.9",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "sharp": "^0.35.3",
+    "tailwind-merge": "^3.0.1",
+    "zustand": "^5.0.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.6",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.13.4",
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3",
+    "@vitejs/plugin-react": "^4.3.4",
+    "better-sqlite3": "^12.0.0",
+    "concurrently": "^9.1.2",
+    "drizzle-kit": "^0.30.4",
+    "electron": "^34.2.0",
+    "electron-builder": "^25.1.8",
+    "tailwindcss": "^4.0.6",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "vite": "^6.1.0",
+    "wait-on": "^8.0.2"
+  },
+  "build": {
+    "appId": "ai.marlex.studio",
+    "productName": "Marlex",
+    "directories": {
+      "output": "build"
+    },
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    }
+  }
+}
