@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+@theme {
+  --color-accent: oklch(64% 0.15 40);
+  --color-accent-dark: oklch(55% 0.13 40);
+  --color-canvas: oklch(16% 0.014 55);
+  --color-canvas-2: oklch(19% 0.015 55);
+  --color-canvas-3: oklch(23% 0.016 55);
+  --color-line: oklch(38% 0.02 55 / 55%);
+  --font-display: 'Playfair Display', Georgia, serif;
+}
+
 @layer base {
   :root {
     --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;

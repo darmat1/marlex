@@ -4,36 +4,41 @@ import { FeaturesSection } from './FeaturesSection';
 import { ComparisonSection } from './ComparisonSection';
 import { FAQSection } from './FAQSection';
 import { LandingFooter } from './LandingFooter';
-import { Download, Github, Sparkles } from 'lucide-react';
+import { Download, Github } from 'lucide-react';
 import { GITHUB_REPO, getDownloadUrls } from '../../lib/runtime';
 
 export const LandingPage: React.FC = () => {
   const downloadUrls = getDownloadUrls();
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-amber-500 selection:text-zinc-950 overflow-x-hidden">
-      {/* Top Floating Navigation */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-zinc-950/80 backdrop-blur-lg border-b border-zinc-800/60">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          {/* Logo */}
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center font-black text-zinc-950 text-lg shadow-lg shadow-amber-500/20">
-              M
-            </div>
-            <div>
-              <span className="font-extrabold text-white tracking-tight text-base">MARLEX</span>
-              <span className="text-[10px] font-mono text-amber-400 ml-2 px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20">
-                v2.0
-              </span>
-            </div>
+    <div className="min-h-screen bg-canvas text-zinc-100 font-sans selection:bg-accent selection:text-canvas overflow-x-hidden relative">
+      {/* Vertical margin label — editorial device, desktop only */}
+      <div
+        className="hidden xl:block fixed left-6 top-[45%] text-[11px] font-mono tracking-[0.16em] uppercase text-zinc-600 whitespace-nowrap pointer-events-none z-0"
+        style={{ transform: 'rotate(-90deg) translateX(-100%)', transformOrigin: 'top left' }}
+      >
+        Marlex · Content Factory · Est. 2026
+      </div>
+
+      {/* Top Navigation */}
+      <header className="sticky top-0 z-50 bg-canvas/85 backdrop-blur-md border-b border-line">
+        <div className="max-w-6xl mx-auto px-6 lg:px-8 h-[68px] flex items-center justify-between gap-6">
+          {/* Wordmark */}
+          <div className="flex items-baseline gap-2.5">
+            <span className="font-display italic text-xl tracking-tight text-white">
+              Marlex<span className="text-accent">.</span>
+            </span>
+            <span className="text-[10px] font-mono text-zinc-500 border border-line px-1.5 py-0.5 rounded">
+              v2.0
+            </span>
           </div>
 
           {/* Nav Links */}
-          <nav className="hidden md:flex items-center gap-8 text-xs font-medium text-zinc-400">
-            <a href="#features" className="hover:text-amber-400 transition-colors">
+          <nav className="hidden md:flex items-center gap-9 text-[13px] font-medium text-zinc-400">
+            <a href="#features" className="hover:text-white transition-colors">
               Возможности
             </a>
-            <a href="#faq" className="hover:text-amber-400 transition-colors">
+            <a href="#faq" className="hover:text-white transition-colors">
               FAQ
             </a>
             <a
@@ -48,20 +53,18 @@ export const LandingPage: React.FC = () => {
           </nav>
 
           {/* Quick Download CTA */}
-          <div className="flex items-center gap-3">
-            <a
-              href={downloadUrls.macSilicon}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs shadow-md shadow-amber-500/15 transition-all transform active:scale-95"
-            >
-              <Download className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span>Скачать приложение</span>
-            </a>
-          </div>
+          <a
+            href={downloadUrls.macSilicon}
+            className="flex items-center gap-2 px-4 py-2 rounded-md border border-line hover:border-accent text-zinc-200 hover:text-accent font-semibold text-xs transition-colors"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Скачать</span>
+          </a>
         </div>
       </header>
 
       {/* Landing Sections */}
-      <main>
+      <main className="relative z-10">
         <HeroSection />
         <FeaturesSection />
         <ComparisonSection />

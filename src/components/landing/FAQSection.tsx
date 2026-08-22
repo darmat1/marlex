@@ -28,43 +28,42 @@ export const FAQSection: React.FC = () => {
   ];
 
   return (
-    <section id="faq" className="py-20 md:py-28 bg-zinc-950 border-t border-zinc-900">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="text-xs font-bold uppercase tracking-widest text-amber-400 mb-3">
+    <section id="faq" className="py-24 md:py-28">
+      <div className="max-w-3xl mx-auto px-6 lg:px-8">
+        <div className="mb-12">
+          <span className="text-[11.5px] font-mono uppercase tracking-[0.14em] text-accent">
             Вопросы и ответы
-          </h2>
-          <p className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+          </span>
+          <p className="font-display font-medium text-[28px] sm:text-4xl text-white mt-2.5">
             Часто задаваемые вопросы
           </p>
         </div>
 
-        <div className="space-y-4">
+        <div>
+          <hr className="border-line" />
           {faqs.map((faq, idx) => {
             const isOpen = openIndex === idx;
             return (
-              <div
-                key={idx}
-                className="rounded-2xl bg-zinc-900/60 border border-zinc-800/80 overflow-hidden transition-colors"
-              >
+              <div key={idx}>
                 <button
                   onClick={() => setOpenIndex(isOpen ? null : idx)}
-                  className="w-full p-6 text-left flex items-center justify-between gap-4 cursor-pointer"
+                  className="w-full py-5 text-left flex items-center justify-between gap-5 cursor-pointer group"
                 >
-                  <span className="font-bold text-white text-base sm:text-lg">
+                  <span className="font-semibold text-white text-base sm:text-[17px] group-hover:text-accent transition-colors">
                     {faq.q}
                   </span>
                   <ChevronDown
-                    className={`w-5 h-5 text-amber-400 shrink-0 transition-transform duration-200 ${
+                    className={`w-4 h-4 text-accent shrink-0 transition-transform duration-200 ${
                       isOpen ? 'rotate-180' : ''
                     }`}
                   />
                 </button>
                 {isOpen && (
-                  <div className="px-6 pb-6 text-sm sm:text-base text-zinc-400 leading-relaxed border-t border-zinc-800/40 pt-4">
+                  <p className="text-[14.5px] text-zinc-400 leading-relaxed max-w-[68ch] pb-5 -mt-1.5">
                     {faq.a}
-                  </div>
+                  </p>
                 )}
+                <hr className="border-line" />
               </div>
             );
           })}
