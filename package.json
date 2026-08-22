@@ -1,6 +1,6 @@
 {
   "name": "marlex",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "Marlex — Autonomous Content Factory & Carousel Studio for macOS",
   "main": "dist-electron/main.js",
