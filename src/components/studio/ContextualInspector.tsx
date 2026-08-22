@@ -164,6 +164,24 @@ export const ContextualInspector: React.FC<ContextualInspectorProps> = ({
             {/* Typography Controls */}
             {isText && (
               <>
+                {/* Font Family Selector */}
+                <div>
+                  <label className="text-[11px] text-zinc-400 font-medium block mb-1.5">Шрифт</label>
+                  <select
+                    value={selectedElement.fontFamily || activeProject.font || 'Source Sans 3'}
+                    onChange={(e) => onUpdateElement({ fontFamily: e.target.value })}
+                    className="w-full bg-zinc-900 border border-zinc-800 text-xs text-zinc-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-amber-500 cursor-pointer mb-3"
+                  >
+                    <option value="Source Sans 3" style={{ fontFamily: 'Source Sans 3' }}>Source Sans 3</option>
+                    <option value="Inter" style={{ fontFamily: 'Inter' }}>Inter</option>
+                    <option value="Montserrat" style={{ fontFamily: 'Montserrat' }}>Montserrat</option>
+                    <option value="Playfair Display" style={{ fontFamily: 'Playfair Display' }}>Playfair Display</option>
+                    <option value="Roboto" style={{ fontFamily: 'Roboto' }}>Roboto</option>
+                    <option value="Georgia" style={{ fontFamily: 'Georgia' }}>Georgia</option>
+                    <option value="Courier New" style={{ fontFamily: 'Courier New' }}>Courier New</option>
+                  </select>
+                </div>
+
                 {/* Font Size & Stepper */}
                 <div>
                   <div className="flex items-center justify-between text-[11px] text-zinc-400 font-medium mb-1.5">

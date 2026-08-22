@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Sparkles, 
   ChevronLeft, 
@@ -137,6 +137,47 @@ export const StudioLayout: React.FC = () => {
     setRawInput(topic);
     setActiveDockTab('prompt');
   };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input or textarea
+      const tag = document.activeElement?.tagName.toLowerCase();
+      if (tag === 'input' || tag === 'textarea') return;
+
+      if (!selectedElementId || !selectedElement) return;
+
+      // Nudging with arrow keys (1px)
+      // Use Shift + Arrow for 10px nudging
+      const nudgeAmount = e.shiftKey ? 10 : 1;
+
+      switch (e.key) {
+        case 'Delete':
+        case 'Backspace':
+          e.preventDefault();
+          handleDeleteSelectedElement();
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          handleUpdateSelectedElement({ y: selectedElement.y - nudgeAmount });
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          handleUpdateSelectedElement({ y: selectedElement.y + nudgeAmount });
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          handleUpdateSelectedElement({ x: selectedElement.x - nudgeAmount });
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          handleUpdateSelectedElement({ x: selectedElement.x + nudgeAmount });
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedElementId, selectedElement, activeSlide, slideElements]);
 
   return (
     <div className="flex-1 flex flex-col h-full bg-zinc-950 overflow-hidden select-none font-sans">

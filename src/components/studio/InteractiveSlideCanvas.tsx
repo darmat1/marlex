@@ -273,6 +273,7 @@ export const InteractiveSlideCanvas: React.FC<InteractiveSlideCanvasProps> = ({
                     borderRadius: `${el.borderRadius || 999}px`,
                     border: `1.5px solid ${el.borderColor || `${accentColor}40`}`,
                     boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+                    fontFamily: el.fontFamily || undefined,
                   }}
                 >
                   {el.text}
@@ -290,6 +291,7 @@ export const InteractiveSlideCanvas: React.FC<InteractiveSlideCanvasProps> = ({
                     lineHeight: el.fontSize && el.fontSize > 50 ? 1.2 : 1.35,
                     whiteSpace: 'pre-wrap',
                     textShadow: activePhoto ? '0 2px 10px rgba(0,0,0,0.7)' : 'none',
+                    fontFamily: el.fontFamily || undefined,
                   }}
                 >
                   {isEditing ? (
