@@ -29,6 +29,27 @@ export const InteractiveSlideCanvas: React.FC<InteractiveSlideCanvasProps> = ({
   const bgColor = slide.slideBgColor || profile.defaultBgColor || '#1c1917';
   const accentColor = slide.slideAccentColor || profile.defaultAccentColor || '#D1B852';
 
+  // Dynamically load Google Fonts for elements
+  useEffect(() => {
+    const fontsToLoad = new Set<string>();
+    elements.forEach(el => {
+      if ((el.type === 'text' || el.type === 'badge') && el.fontFamily) {
+        fontsToLoad.add(el.fontFamily);
+      }
+    });
+
+    fontsToLoad.forEach(font => {
+      const linkId = `gfont-${font.replace(/\s+/g, '-')}`;
+      if (!document.getElementById(linkId)) {
+        const link = document.createElement('link');
+        link.id = linkId;
+        link.rel = 'stylesheet';
+        link.href = `https://fonts.googleapis.com/css2?family=${font.replace(/ /g, '+')}:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,700&display=swap`;
+        document.head.appendChild(link);
+      }
+    });
+  }, [elements]);
+
   const photoOpacity = (slide.photoOpacity !== undefined ? slide.photoOpacity : (activePhoto ? 90 : 20)) / 100;
   const overlayMode = slide.overlayGradient || (activePhoto ? 'dark_bottom' : 'none');
 

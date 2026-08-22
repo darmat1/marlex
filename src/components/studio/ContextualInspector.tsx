@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Sliders, 
   Tag, 
@@ -70,6 +70,18 @@ export const ContextualInspector: React.FC<ContextualInspectorProps> = ({
   } = useMarlexStore();
 
   const [newAccentWord, setNewAccentWord] = useState('');
+  const [localFonts, setLocalFonts] = useState<string[]>([]);
+
+  useEffect(() => {
+    if ('queryLocalFonts' in window) {
+      (window as any).queryLocalFonts()
+        .then((fonts: any[]) => {
+          const families = Array.from(new Set(fonts.map((f: any) => f.family))).sort() as string[];
+          setLocalFonts(families);
+        })
+        .catch(console.error);
+    }
+  }, []);
 
   const handleAddAccent = (e: React.FormEvent) => {
     e.preventDefault();
@@ -166,20 +178,34 @@ export const ContextualInspector: React.FC<ContextualInspectorProps> = ({
               <>
                 {/* Font Family Selector */}
                 <div>
-                  <label className="text-[11px] text-zinc-400 font-medium block mb-1.5">Шрифт</label>
-                  <select
+                  <label className="text-[11px] text-zinc-400 font-medium block mb-1.5">Шрифт (название из Google Fonts)</label>
+                  <input
+                    type="text"
+                    list="font-family-list"
                     value={selectedElement.fontFamily || activeProject.font || 'Source Sans 3'}
                     onChange={(e) => onUpdateElement({ fontFamily: e.target.value })}
-                    className="w-full bg-zinc-900 border border-zinc-800 text-xs text-zinc-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-amber-500 cursor-pointer mb-3"
-                  >
-                    <option value="Source Sans 3" style={{ fontFamily: 'Source Sans 3' }}>Source Sans 3</option>
-                    <option value="Inter" style={{ fontFamily: 'Inter' }}>Inter</option>
-                    <option value="Montserrat" style={{ fontFamily: 'Montserrat' }}>Montserrat</option>
-                    <option value="Playfair Display" style={{ fontFamily: 'Playfair Display' }}>Playfair Display</option>
-                    <option value="Roboto" style={{ fontFamily: 'Roboto' }}>Roboto</option>
-                    <option value="Georgia" style={{ fontFamily: 'Georgia' }}>Georgia</option>
-                    <option value="Courier New" style={{ fontFamily: 'Courier New' }}>Courier New</option>
-                  </select>
+                    className="w-full bg-zinc-900 border border-zinc-800 text-xs text-zinc-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-amber-500 mb-3"
+                    placeholder="Например: Montserrat, Oswald..."
+                  />
+                  <datalist id="font-family-list">
+                    {/* Common / Default */}
+                    <option value="Source Sans 3" />
+                    <option value="Inter" />
+                    <option value="Montserrat" />
+                    <option value="Playfair Display" />
+                    <option value="Roboto" />
+                    <option value="Oswald" />
+                    <option value="Lato" />
+                    <option value="Poppins" />
+                    <option value="Georgia" />
+                    <option value="Arial" />
+                    <option value="Times New Roman" />
+                    <option value="Courier New" />
+                    {/* Dynamically injected local fonts will go here */}
+                    {localFonts.map(f => (
+                      <option key={f} value={f} />
+                    ))}
+                  </datalist>
                 </div>
 
                 {/* Font Size & Stepper */}
