@@ -1,6 +1,6 @@
+import type { IncomingMessage, ServerResponse } from 'node:http';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { handle } from 'hono/vercel';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { drizzle } from 'drizzle-orm/postgres-js';
@@ -116,87 +116,133 @@ const auth = betterAuth({
   ],
 });
 
-// ─── Hono App ────────────────────────────────────────────
-const app = new Hono().basePath('/api');
+// ─── Helper: read body from IncomingMessage ──────────────
+function readBody(req: IncomingMessage): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    req.on('data', (chunk: Buffer) => chunks.push(chunk));
+    req.on('end', () => resolve(Buffer.concat(chunks)));
+    req.on('error', reject);
+  });
+}
 
-app.use(
-  '*',
-  cors({
-    origin: (origin) => origin || '*',
-    allowHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With'],
-    allowMethods: ['POST', 'GET', 'OPTIONS', 'DELETE', 'PUT'],
-    exposeHeaders: ['Set-Cookie'],
-    credentials: true,
-  })
-);
+// ─── Helper: set CORS headers ────────────────────────────
+function setCors(req: IncomingMessage, res: ServerResponse): boolean {
+  const origin = req.headers.origin || '*';
+  res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie, X-Requested-With');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Expose-Headers', 'Set-Cookie');
 
-app.on(['POST', 'GET'], '/auth/**', async (c) => {
-  try {
-    const response = await auth.handler(c.req.raw);
-    return response;
-  } catch (err: any) {
-    console.error('Auth handler error:', err);
-    return c.json({ error: err.message, stack: err.stack }, 500);
+  if (req.method === 'OPTIONS') {
+    res.statusCode = 204;
+    res.end();
+    return true;
   }
-});
+  return false;
+}
 
-app.get('/health', (c) => {
-  return c.json({ status: 'ok', engine: 'Marlex Content Engine', timestamp: new Date().toISOString() });
-});
+// ─── Helper: convert Node req to Web Request ─────────────
+async function toWebRequest(req: IncomingMessage): Promise<Request> {
+  const protocol = req.headers['x-forwarded-proto'] || 'https';
+  const host = req.headers['x-forwarded-host'] || req.headers.host || 'localhost';
+  const url = `${protocol}://${host}${req.url}`;
 
-app.get('/debug', async (c) => {
-  const info: any = {
-    env: {
-      DATABASE_URL: process.env.DATABASE_URL ? `${process.env.DATABASE_URL.substring(0, 30)}...` : 'NOT SET',
-      BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET ? 'SET' : 'NOT SET',
-      BETTER_AUTH_URL: process.env.BETTER_AUTH_URL || 'NOT SET',
-      VERCEL_URL: process.env.VERCEL_URL || 'NOT SET',
-    },
-    db: 'untested',
-  };
-  try {
-    const result = await client`SELECT COUNT(*) as count FROM "user"`;
-    info.db = `connected, ${result[0].count} users`;
-  } catch (err: any) {
-    info.db = `error: ${err.message}`;
+  const headers = new Headers();
+  for (const [key, value] of Object.entries(req.headers)) {
+    if (value) {
+      headers.set(key, Array.isArray(value) ? value.join(', ') : value);
+    }
   }
-  return c.json(info);
-});
 
-app.get('/projects', async (c) => {
+  const hasBody = req.method !== 'GET' && req.method !== 'HEAD';
+  const body = hasBody ? await readBody(req) : null;
+
+  return new Request(url, {
+    method: req.method || 'GET',
+    headers,
+    body,
+  });
+}
+
+// ─── Helper: write Web Response to Node res ──────────────
+async function writeWebResponse(webRes: Response, res: ServerResponse) {
+  res.statusCode = webRes.status;
+  webRes.headers.forEach((value, key) => {
+    // Handle multiple Set-Cookie headers
+    if (key.toLowerCase() === 'set-cookie') {
+      const existing = res.getHeader('set-cookie');
+      if (existing) {
+        const arr = Array.isArray(existing) ? existing : [String(existing)];
+        arr.push(value);
+        res.setHeader('set-cookie', arr);
+      } else {
+        res.setHeader('set-cookie', value);
+      }
+    } else {
+      res.setHeader(key, value);
+    }
+  });
+  const arrayBuffer = await webRes.arrayBuffer();
+  res.end(Buffer.from(arrayBuffer));
+}
+
+// ─── Main Handler ────────────────────────────────────────
+export default async function handler(req: IncomingMessage, res: ServerResponse) {
   try {
-    const allProjects = await db.select().from(projects);
-    return c.json({ success: true, data: allProjects });
+    // CORS preflight
+    if (setCors(req, res)) return;
+
+    const pathname = req.url || '/';
+
+    // /api/health
+    if (pathname === '/api/health') {
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ status: 'ok', engine: 'Marlex Content Engine', timestamp: new Date().toISOString() }));
+      return;
+    }
+
+    // /api/debug
+    if (pathname === '/api/debug') {
+      const info: any = {
+        env: {
+          DATABASE_URL: process.env.DATABASE_URL ? `${process.env.DATABASE_URL.substring(0, 30)}...` : 'NOT SET',
+          BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET ? 'SET' : 'NOT SET',
+          BETTER_AUTH_URL: process.env.BETTER_AUTH_URL || 'NOT SET',
+          VERCEL_URL: process.env.VERCEL_URL || 'NOT SET',
+        },
+        db: 'untested',
+      };
+      try {
+        const result = await client`SELECT COUNT(*) as count FROM "user"`;
+        info.db = `connected, ${result[0].count} users`;
+      } catch (err: any) {
+        info.db = `error: ${err.message}`;
+      }
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify(info));
+      return;
+    }
+
+    // /api/auth/** — Better Auth
+    if (pathname.startsWith('/api/auth/')) {
+      const webReq = await toWebRequest(req);
+      console.log(`[auth] ${req.method} ${pathname}`);
+      const webRes = await auth.handler(webReq);
+      console.log(`[auth] response status: ${webRes.status}`);
+      await writeWebResponse(webRes, res);
+      return;
+    }
+
+    // 404
+    res.statusCode = 404;
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({ error: 'Not found', path: pathname }));
   } catch (err: any) {
-    return c.json({ success: false, error: err.message }, 500);
+    console.error('[handler] error:', err);
+    res.statusCode = 500;
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({ error: err.message, stack: err.stack }));
   }
-});
-
-app.post('/projects', async (c) => {
-  try {
-    const body = await c.req.json();
-    const newProject = {
-      id: body.id || `proj_${Date.now()}`,
-      title: body.title,
-      rawInput: body.rawInput,
-      slidesJson: JSON.stringify(body.slides),
-      telegramPost: body.telegramPost,
-      linkedInPost: body.linkedInPost,
-      threadsJson: JSON.stringify(body.threadsPosts || []),
-      status: body.status || 'draft',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    await db.insert(projects).values(newProject);
-    return c.json({ success: true, data: newProject });
-  } catch (err: any) {
-    return c.json({ success: false, error: err.message }, 500);
-  }
-});
-
-// Vercel Edge-compatible export
-export const config = {
-  runtime: 'nodejs',
-};
-
-export default handle(app);
+}
