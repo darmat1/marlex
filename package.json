@@ -58,6 +58,7 @@
     },
     "mac": {
       "category": "public.app-category.productivity",
+      "artifactName": "${productName}-${arch}.${ext}",
       "target": [
         {
           "target": "dmg",
@@ -75,7 +76,11 @@
         }
       ]
     },
+    "dmg": {
+      "artifactName": "${productName}-${arch}.${ext}"
+    },
     "win": {
+      "artifactName": "${productName}-Setup.${ext}",
       "target": [
         {
           "target": "nsis",
@@ -84,6 +89,9 @@
           ]
         }
       ]
+    },
+    "nsis": {
+      "artifactName": "${productName}-Setup.${ext}"
     },
     "publish": {
       "provider": "github",

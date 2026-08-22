@@ -47,8 +47,8 @@ export function getDownloadUrls(): ReleaseAssetUrls {
   const base = `https://github.com/${GITHUB_REPO}/releases/latest/download`;
   return {
     macSilicon: `${base}/Marlex-arm64.dmg`,
-    macIntel: `${base}/Marlex.dmg`,
+    macIntel: `${base}/Marlex-x64.dmg`,
     windows: `${base}/Marlex-Setup.exe`,
-    releasesPage: `https://github.com/${GITHUB_REPO}/releases/latest`,
+    releasesPage: `https://github.com/${GITHUB_REPO}/releases`,
   };
 }
