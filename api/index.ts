@@ -209,28 +209,6 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return;
     }
 
-    // /api/debug
-    if (pathname === '/api/debug') {
-      const info: any = {
-        env: {
-          DATABASE_URL: process.env.DATABASE_URL ? `${process.env.DATABASE_URL.substring(0, 30)}...` : 'NOT SET',
-          BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET ? 'SET' : 'NOT SET',
-          BETTER_AUTH_URL: process.env.BETTER_AUTH_URL || 'NOT SET',
-          VERCEL_URL: process.env.VERCEL_URL || 'NOT SET',
-        },
-        db: 'untested',
-      };
-      try {
-        const result = await client`SELECT COUNT(*) as count FROM "user"`;
-        info.db = `connected, ${result[0].count} users`;
-      } catch (err: any) {
-        info.db = `error: ${err.message}`;
-      }
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify(info));
-      return;
-    }
-
     // /api/auth/** — Better Auth
     if (pathname.startsWith('/api/auth/')) {
       const webReq = await toWebRequest(req);

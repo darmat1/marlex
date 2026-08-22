@@ -114,7 +114,7 @@ function createWindow() {
 
   if (isDev) {
     mainWindow.loadURL('http://127.0.0.1:5174');
-    mainWindow.webContents.openDevTools();
+    // mainWindow.webContents.openDevTools(); // Оставляем закомментированным по просьбе
   } else {
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
   }
