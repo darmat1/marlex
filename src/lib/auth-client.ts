@@ -6,7 +6,8 @@ const sanitizeBaseUrl = (rawUrl?: string): string => {
     if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.origin.startsWith('http')) {
       return window.location.origin;
     }
-    return 'http://localhost:3001';
+    // In Electron or production fallback, ALWAYS point to production backend
+    return 'https://marlex.vercel.app';
   }
 
   let url = rawUrl.trim();
