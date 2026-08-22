@@ -85,8 +85,14 @@ function hasApp(appName: string): boolean {
 }
 
 function createWindow() {
-  const iconPath = path.join(__dirname, '../public/icon.png');
-  const icon = nativeImage.createFromPath(iconPath);
+  let iconPath = path.join(__dirname, '../public/icon.png');
+  if (!fs.existsSync(iconPath)) {
+    iconPath = path.join(__dirname, '../dist/icon.png');
+  }
+  if (!fs.existsSync(iconPath)) {
+    iconPath = path.join(process.resourcesPath, 'icon.png');
+  }
+  const icon = fs.existsSync(iconPath) ? nativeImage.createFromPath(iconPath) : nativeImage.createEmpty();
 
   if (isMac && app.dock && !icon.isEmpty()) {
     app.dock.setIcon(icon);

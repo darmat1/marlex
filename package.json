@@ -6,9 +6,9 @@
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
-    "dev:electron": "tsc -p electron/tsconfig.json && node scripts/prepare-dist.js && concurrently -k \"vite\" \"wait-on tcp:5174 && electron .\"",
-    "build:electron": "vite build && tsc -p electron/tsconfig.json && node scripts/prepare-dist.js && electron-builder",
+    "build": "node scripts/generate-icons.js && tsc && vite build",
+    "dev:electron": "node scripts/generate-icons.js && tsc -p electron/tsconfig.json && node scripts/prepare-dist.js && concurrently -k \"vite\" \"wait-on tcp:5174 && electron .\"",
+    "build:electron": "node scripts/generate-icons.js && vite build && tsc -p electron/tsconfig.json && node scripts/prepare-dist.js && electron-builder",
     "server:dev": "tsx server/src/index.ts"
   },
   "dependencies": {
@@ -54,9 +54,11 @@
     "appId": "ai.marlex.studio",
     "productName": "Marlex",
     "directories": {
-      "output": "build"
+      "output": "dist-release"
     },
+    "icon": "public/icon.png",
     "mac": {
+      "icon": "public/icon.png",
       "category": "public.app-category.productivity",
       "artifactName": "${productName}-${arch}.${ext}",
       "target": [
@@ -77,9 +79,11 @@
       ]
     },
     "dmg": {
+      "icon": "public/icon.png",
       "artifactName": "${productName}-${arch}.${ext}"
     },
     "win": {
+      "icon": "public/icon.png",
       "artifactName": "${productName}-Setup.${ext}",
       "target": [
         {
@@ -91,6 +95,8 @@
       ]
     },
     "nsis": {
+      "installerIcon": "public/icon.png",
+      "uninstallerIcon": "public/icon.png",
       "artifactName": "${productName}-Setup.${ext}"
     },
     "publish": {
