@@ -75,7 +75,12 @@ export const projects = pgTable('projects', {
 
 // ─── Database ────────────────────────────────────────────
 const connectionString = process.env.DATABASE_URL || '';
-const client = postgres(connectionString, { prepare: false });
+const client = postgres(connectionString, {
+  prepare: false,
+  connect_timeout: 10,
+  idle_timeout: 20,
+  max: 1,
+});
 const db = drizzle(client, {
   schema: { user, session, account, verification, projects },
 });
@@ -131,6 +136,25 @@ app.on(['POST', 'GET'], '/api/auth/**', (c) => {
 
 app.get('/api/health', (c) => {
   return c.json({ status: 'ok', engine: 'Marlex Content Engine', timestamp: new Date().toISOString() });
+});
+
+app.get('/api/debug', async (c) => {
+  const info: any = {
+    env: {
+      DATABASE_URL: process.env.DATABASE_URL ? `${process.env.DATABASE_URL.substring(0, 30)}...` : 'NOT SET',
+      BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET ? 'SET' : 'NOT SET',
+      BETTER_AUTH_URL: process.env.BETTER_AUTH_URL || 'NOT SET',
+      VERCEL_URL: process.env.VERCEL_URL || 'NOT SET',
+    },
+    db: 'untested',
+  };
+  try {
+    const result = await client`SELECT COUNT(*) as count FROM "user"`;
+    info.db = `connected, ${result[0].count} users`;
+  } catch (err: any) {
+    info.db = `error: ${err.message}`;
+  }
+  return c.json(info);
 });
 
 app.get('/api/projects', async (c) => {
