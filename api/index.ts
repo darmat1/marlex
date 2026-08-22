@@ -114,6 +114,12 @@ const auth = betterAuth({
     'app://marlex',
     'null',
   ],
+  advanced: {
+    defaultCookieAttributes: {
+      sameSite: 'none',
+      secure: true,
+    },
+  },
 });
 
 // ─── Helper: read body from IncomingMessage ──────────────
