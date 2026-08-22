@@ -4,11 +4,22 @@ import { StudioLayout } from './components/studio/StudioLayout';
 import { MultiChannelTabs } from './components/channels/MultiChannelTabs';
 import { SettingsModal } from './components/settings/SettingsModal';
 import { AuthScreen } from './components/auth/AuthScreen';
+import { LandingPage } from './components/landing/LandingPage';
 import { useSession } from './lib/auth-client';
 import { useMarlexStore } from './lib/store/useMarlexStore';
+import { isElectron } from './lib/runtime';
 import { RefreshCw } from 'lucide-react';
 
 export function App() {
+  const inElectron = isElectron();
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const forceAppMode = searchParams?.get('app') === 'true';
+
+  // If in standard web browser and not forced to studio, show high-converting Marketing Landing Page
+  if (!inElectron && !forceAppMode) {
+    return <LandingPage />;
+  }
+
   const { data: session, isPending, error, refetch } = useSession();
   const [activeTab, setActiveTab] = useState<'studio' | 'channels' | 'history'>('studio');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
