@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { getRequestListener } from '@hono/node-server';
+import { handle } from 'hono/vercel';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { drizzle } from 'drizzle-orm/postgres-js';
@@ -117,7 +117,7 @@ const auth = betterAuth({
 });
 
 // ─── Hono App ────────────────────────────────────────────
-const app = new Hono();
+const app = new Hono().basePath('/api');
 
 app.use(
   '*',
@@ -130,15 +130,21 @@ app.use(
   })
 );
 
-app.on(['POST', 'GET'], '/api/auth/**', (c) => {
-  return auth.handler(c.req.raw);
+app.on(['POST', 'GET'], '/auth/**', async (c) => {
+  try {
+    const response = await auth.handler(c.req.raw);
+    return response;
+  } catch (err: any) {
+    console.error('Auth handler error:', err);
+    return c.json({ error: err.message, stack: err.stack }, 500);
+  }
 });
 
-app.get('/api/health', (c) => {
+app.get('/health', (c) => {
   return c.json({ status: 'ok', engine: 'Marlex Content Engine', timestamp: new Date().toISOString() });
 });
 
-app.get('/api/debug', async (c) => {
+app.get('/debug', async (c) => {
   const info: any = {
     env: {
       DATABASE_URL: process.env.DATABASE_URL ? `${process.env.DATABASE_URL.substring(0, 30)}...` : 'NOT SET',
@@ -157,7 +163,7 @@ app.get('/api/debug', async (c) => {
   return c.json(info);
 });
 
-app.get('/api/projects', async (c) => {
+app.get('/projects', async (c) => {
   try {
     const allProjects = await db.select().from(projects);
     return c.json({ success: true, data: allProjects });
@@ -166,7 +172,7 @@ app.get('/api/projects', async (c) => {
   }
 });
 
-app.post('/api/projects', async (c) => {
+app.post('/projects', async (c) => {
   try {
     const body = await c.req.json();
     const newProject = {
@@ -188,4 +194,9 @@ app.post('/api/projects', async (c) => {
   }
 });
 
-export default getRequestListener(app.fetch);
+// Vercel Edge-compatible export
+export const config = {
+  runtime: 'nodejs',
+};
+
+export default handle(app);
