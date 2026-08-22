@@ -6,7 +6,7 @@ export function isElectron(): boolean {
   return typeof window !== 'undefined' && typeof window.electronAPI !== 'undefined';
 }
 
-export type ClientPlatform = 'macos' | 'windows' | 'linux' | 'unknown';
+export type ClientPlatform = 'macos' | 'windows' | 'linux' | 'ipad' | 'ios' | 'unknown';
 
 export function getClientPlatform(): ClientPlatform {
   if (isElectron() && window.electronAPI?.platform) {
@@ -20,6 +20,12 @@ export function getClientPlatform(): ClientPlatform {
     const userAgent = navigator.userAgent.toLowerCase();
     const platform = (navigator as any).userAgentData?.platform?.toLowerCase() || navigator.platform?.toLowerCase() || '';
 
+    const isIPad = platform.includes('ipad') || (platform.includes('mac') && navigator.maxTouchPoints && navigator.maxTouchPoints > 1);
+    if (isIPad) return 'ipad';
+
+    if (platform.includes('iphone') || platform.includes('ipod') || userAgent.includes('iphone')) {
+      return 'ios';
+    }
     if (platform.includes('mac') || userAgent.includes('macintosh') || userAgent.includes('mac os')) {
       return 'macos';
     }

@@ -52,14 +52,15 @@ export const LandingPage: React.FC = () => {
             </a>
           </nav>
 
-          {/* Quick Download CTA */}
-          <a
-            href={downloadUrls.macSilicon}
-            className="flex items-center gap-2 px-4 py-2 rounded-md border border-line hover:border-accent text-zinc-200 hover:text-accent font-semibold text-xs transition-colors"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Скачать</span>
-          </a>
+          {/* Quick Studio / Download CTA */}
+          <div className="flex items-center gap-2.5">
+            <a
+              href="/app"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-md bg-accent hover:bg-accent-dark text-canvas font-bold text-xs transition-colors"
+            >
+              <span>Открыть Studio</span>
+            </a>
+          </div>
         </div>
       </header>
 

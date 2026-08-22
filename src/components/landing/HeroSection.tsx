@@ -3,10 +3,12 @@ import {
   Download,
   Apple,
   Monitor,
+  Tablet,
   ChevronDown,
   CheckCircle2,
   ArrowRight,
   ShieldCheck,
+  Sparkles,
 } from 'lucide-react';
 import { getClientPlatform, getDownloadUrls, GITHUB_REPO } from '../../lib/runtime';
 
@@ -16,6 +18,14 @@ export const HeroSection: React.FC = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const getPrimaryDownload = () => {
+    if (platform === 'ipad' || platform === 'ios') {
+      return {
+        label: 'Открыть на iPad (PWA)',
+        sub: 'Веб-приложение для Safari / Chrome',
+        icon: <Tablet className="w-4 h-4" />,
+        url: '/app',
+      };
+    }
     if (platform === 'windows') {
       return {
         label: 'Скачать для Windows',
@@ -127,6 +137,18 @@ export const HeroSection: React.FC = () => {
                         </div>
                       </a>
 
+                      <a
+                        href="/app"
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-md text-xs text-zinc-200 hover:bg-canvas-2 hover:text-accent transition-colors"
+                        onClick={() => setIsDropdownOpen(false)}
+                      >
+                        <Tablet className="w-4 h-4 text-accent" />
+                        <div>
+                          <div className="font-semibold text-accent">iPad / Web App (PWA)</div>
+                          <div className="text-[10px] text-zinc-400">Открыть онлайн без скачивания</div>
+                        </div>
+                      </a>
+
                       <div className="border-t border-line my-1 pt-1">
                         <a
                           href={downloadUrls.releasesPage}
@@ -143,13 +165,21 @@ export const HeroSection: React.FC = () => {
                 </div>
 
                 <a
+                  href="/app"
+                  className="flex items-center gap-2.5 px-5 py-4 rounded-md border border-accent/40 bg-accent/5 hover:bg-accent/10 hover:border-accent text-accent text-sm font-semibold transition-all"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>Веб-версия / iPad</span>
+                </a>
+
+                <a
                   href={`https://github.com/${GITHUB_REPO}`}
                   target="_blank"
                   rel="noreferrer"
                   className="flex items-center gap-2.5 px-5 py-4 rounded-md border border-line hover:border-accent text-zinc-300 hover:text-accent text-sm font-semibold transition-colors"
                 >
                   <ShieldCheck className="w-4 h-4" />
-                  <span>Open-Source · GitHub</span>
+                  <span>GitHub</span>
                 </a>
               </div>
 

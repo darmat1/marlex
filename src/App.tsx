@@ -14,10 +14,16 @@ import { RefreshCw } from 'lucide-react';
 export function App() {
   const inElectron = isElectron();
   const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-  const forceAppMode = searchParams?.get('app') === 'true';
+  const isStandalonePWA = typeof window !== 'undefined' && window.matchMedia('(display-mode: standalone)').matches;
+  const isAppRoute = typeof window !== 'undefined' && (
+    window.location.pathname.startsWith('/app') || 
+    window.location.pathname.startsWith('/studio') ||
+    searchParams?.get('app') === 'true' ||
+    isStandalonePWA
+  );
 
-  // If in standard web browser and not forced to studio, show high-converting Marketing Landing Page
-  if (!inElectron && !forceAppMode) {
+  // If in standard web browser and not on /app, show high-converting Marketing Landing Page
+  if (!inElectron && !isAppRoute) {
     return <LandingPage />;
   }
 
