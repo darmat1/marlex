@@ -5,6 +5,7 @@ import { MultiChannelTabs } from './components/channels/MultiChannelTabs';
 import { SettingsModal } from './components/settings/SettingsModal';
 import { AuthScreen } from './components/auth/AuthScreen';
 import { LandingPage } from './components/landing/LandingPage';
+import { UpdateBanner } from './components/updater/UpdateBanner';
 import { useSession } from './lib/auth-client';
 import { useMarlexStore } from './lib/store/useMarlexStore';
 import { isElectron } from './lib/runtime';
@@ -80,6 +81,9 @@ export function App() {
   // 3. Fully Authenticated Workspace
   return (
     <div className="flex flex-col h-screen w-screen bg-zinc-950 text-zinc-100 overflow-hidden font-sans">
+      {/* In-App Auto-Updater Notification Banner */}
+      <UpdateBanner />
+
       {/* Top Application Bar with User Profile */}
       <Header
         user={session?.user || { id: 'usr_local', name: 'Локальный пользователь', email: 'local@marlex.studio' }}

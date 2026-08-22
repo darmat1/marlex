@@ -1,8 +1,20 @@
-import { app, BrowserWindow, ipcMain, dialog, nativeImage } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, nativeImage, shell } from 'electron';
 import path from 'path';
 import { spawn } from 'child_process';
 import os from 'os';
 import fs from 'fs';
+
+function compareSemver(v1: string, v2: string): number {
+  const p1 = v1.replace(/^v/, '').split('.').map(n => parseInt(n, 10) || 0);
+  const p2 = v2.replace(/^v/, '').split('.').map(n => parseInt(n, 10) || 0);
+  for (let i = 0; i < Math.max(p1.length, p2.length); i++) {
+    const num1 = p1[i] || 0;
+    const num2 = p2[i] || 0;
+    if (num1 > num2) return 1;
+    if (num1 < num2) return -1;
+  }
+  return 0;
+}
 
 let mainWindow: BrowserWindow | null = null;
 const isWin = process.platform === 'win32';
@@ -130,6 +142,76 @@ app.whenReady().then(() => {
   ipcMain.handle('dialog:saveFile', async (_, options) => {
     if (!mainWindow) return null;
     return await dialog.showSaveDialog(mainWindow, options);
+  });
+
+  ipcMain.handle('updater:getVersion', async () => {
+    return app.getVersion();
+  });
+
+  ipcMain.handle('shell:openExternal', async (_, url: string) => {
+    if (url && (url.startsWith('https://') || url.startsWith('http://'))) {
+      await shell.openExternal(url);
+    }
+  });
+
+  ipcMain.handle('updater:check', async () => {
+    const currentVersion = app.getVersion();
+    try {
+      const res = await fetch('https://api.github.com/repos/darmat1/marlex/releases/latest', {
+        headers: {
+          'User-Agent': `Marlex-App/${currentVersion}`,
+          Accept: 'application/vnd.github.v3+json',
+        },
+      });
+
+      if (!res.ok) {
+        return {
+          hasUpdate: false,
+          currentVersion,
+          latestVersion: currentVersion,
+          releaseName: '',
+        };
+      }
+
+      const release: any = await res.json();
+      const latestTag = release.tag_name || release.name || '';
+      const cleanLatest = latestTag.replace(/^v/, '');
+      const hasUpdate = compareSemver(cleanLatest, currentVersion) > 0;
+
+      // Find appropriate asset for current platform
+      let downloadUrl = release.html_url;
+      const isArm = process.arch === 'arm64';
+      if (Array.isArray(release.assets)) {
+        if (isMac) {
+          const dmgAsset = release.assets.find((a: any) =>
+            isArm ? a.name.includes('arm64.dmg') : a.name.endsWith('.dmg') && !a.name.includes('arm64')
+          ) || release.assets.find((a: any) => a.name.endsWith('.dmg'));
+          if (dmgAsset?.browser_download_url) downloadUrl = dmgAsset.browser_download_url;
+        } else if (isWin) {
+          const exeAsset = release.assets.find((a: any) => a.name.endsWith('.exe'));
+          if (exeAsset?.browser_download_url) downloadUrl = exeAsset.browser_download_url;
+        }
+      }
+
+      return {
+        hasUpdate,
+        currentVersion,
+        latestVersion: cleanLatest,
+        releaseName: release.name || latestTag,
+        releaseNotes: release.body || '',
+        publishedAt: release.published_at,
+        downloadUrl,
+        htmlUrl: release.html_url,
+      };
+    } catch (err: any) {
+      console.error('[Updater Check Error]:', err.message);
+      return {
+        hasUpdate: false,
+        currentVersion,
+        latestVersion: currentVersion,
+        releaseName: '',
+      };
+    }
   });
 
   // Cross-Platform detection
