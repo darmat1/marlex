@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Sliders, 
   Tag, 
@@ -48,6 +48,119 @@ const BG_SWATCHES = [
   { name: 'Золото', value: '#D1B852' },
   { name: 'Светлое стекло', value: 'rgba(255, 255, 255, 0.12)' },
 ];
+
+const FontPicker = ({ value, onChange, localFonts }: { value: string, onChange: (font: string) => void, localFonts: string[] }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  const POPULAR_FONTS = ['Source Sans 3', 'Inter', 'Montserrat', 'Playfair Display', 'Roboto', 'Oswald', 'Lato', 'Poppins', 'Georgia', 'Arial', 'Times New Roman', 'Courier New'];
+  const allFonts = Array.from(new Set([...POPULAR_FONTS, ...localFonts]));
+  
+  const isTyping = search && search !== value;
+  const filteredFonts = isTyping 
+    ? allFonts.filter(f => f.toLowerCase().includes(search.toLowerCase()))
+    : allFonts;
+
+  const scrollSelectedIntoView = (fontName: string) => {
+    if (!listRef.current) return;
+    const btn = listRef.current.querySelector(`[data-font="${fontName.replace(/["']/g, '')}"]`) as HTMLElement;
+    if (btn) btn.scrollIntoView({ block: 'nearest' });
+  };
+
+  useEffect(() => {
+    if (isOpen) setTimeout(() => scrollSelectedIntoView(value), 0);
+  }, [isOpen]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!isOpen) {
+        setIsOpen(true);
+        return;
+      }
+      const currentIndex = filteredFonts.indexOf(value || '');
+      let nextIndex = 0;
+      if (currentIndex === -1) {
+        nextIndex = 0;
+      } else if (e.key === 'ArrowDown') {
+        nextIndex = currentIndex < filteredFonts.length - 1 ? currentIndex + 1 : 0;
+      } else {
+        nextIndex = currentIndex > 0 ? currentIndex - 1 : filteredFonts.length - 1;
+      }
+      const nextFont = filteredFonts[nextIndex];
+      if (nextFont) {
+        onChange(nextFont);
+        setSearch(nextFont);
+        scrollSelectedIntoView(nextFont);
+      }
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      setIsOpen(false);
+      if (search && filteredFonts.length === 0) onChange(search);
+    } else if (e.key === 'Escape') {
+      setIsOpen(false);
+    }
+  };
+
+  return (
+    <div className="relative mb-3" ref={wrapperRef}>
+      <label className="text-[11px] text-zinc-400 font-medium block mb-1.5">Шрифт (название из Google Fonts)</label>
+      <input
+        type="text"
+        value={isOpen ? search : (value || '')}
+        onChange={(e) => {
+          setSearch(e.target.value);
+          setIsOpen(true);
+          onChange(e.target.value);
+        }}
+        onFocus={() => {
+          setSearch(value || '');
+          setIsOpen(true);
+        }}
+        onKeyDown={handleKeyDown}
+        className="w-full bg-zinc-900 border border-zinc-800 text-xs text-zinc-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-amber-500"
+        placeholder="Например: Montserrat..."
+      />
+      {isOpen && (
+        <div ref={listRef} className="absolute z-[100] top-[54px] left-0 right-0 max-h-64 overflow-y-auto bg-zinc-900 border border-zinc-700 rounded-lg shadow-2xl py-1">
+          {filteredFonts.length === 0 ? (
+            <div className="px-3 py-2 text-[11px] text-zinc-500">Будет загружен из Google Fonts...</div>
+          ) : (
+            filteredFonts.map(f => (
+              <button
+                key={f}
+                type="button"
+                data-font={f}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  onChange(f);
+                  setSearch(f);
+                  setIsOpen(false);
+                }}
+                className={`w-full text-left px-3 py-1.5 text-xs hover:bg-amber-500/20 hover:text-amber-300 transition-colors ${value === f ? 'bg-amber-500/10 text-amber-400 font-bold' : 'text-zinc-300'}`}
+                style={{ fontFamily: f }}
+              >
+                {f}
+              </button>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export const ContextualInspector: React.FC<ContextualInspectorProps> = ({
   slide,
@@ -177,36 +290,11 @@ export const ContextualInspector: React.FC<ContextualInspectorProps> = ({
             {isText && (
               <>
                 {/* Font Family Selector */}
-                <div>
-                  <label className="text-[11px] text-zinc-400 font-medium block mb-1.5">Шрифт (название из Google Fonts)</label>
-                  <input
-                    type="text"
-                    list="font-family-list"
-                    value={selectedElement.fontFamily ?? activeProject.font ?? 'Source Sans 3'}
-                    onChange={(e) => onUpdateElement({ fontFamily: e.target.value })}
-                    className="w-full bg-zinc-900 border border-zinc-800 text-xs text-zinc-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-amber-500 mb-3"
-                    placeholder="Например: Montserrat, Oswald..."
-                  />
-                  <datalist id="font-family-list">
-                    {/* Common / Default */}
-                    <option value="Source Sans 3" />
-                    <option value="Inter" />
-                    <option value="Montserrat" />
-                    <option value="Playfair Display" />
-                    <option value="Roboto" />
-                    <option value="Oswald" />
-                    <option value="Lato" />
-                    <option value="Poppins" />
-                    <option value="Georgia" />
-                    <option value="Arial" />
-                    <option value="Times New Roman" />
-                    <option value="Courier New" />
-                    {/* Dynamically injected local fonts will go here */}
-                    {localFonts.map(f => (
-                      <option key={f} value={f} />
-                    ))}
-                  </datalist>
-                </div>
+                <FontPicker
+                  value={selectedElement.fontFamily ?? activeProject.font ?? 'Source Sans 3'}
+                  onChange={(font) => onUpdateElement({ fontFamily: font })}
+                  localFonts={localFonts}
+                />
 
                 {/* Font Size & Stepper */}
                 <div>
