@@ -263,7 +263,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({ isOp
                       value={formData.brandHandle}
                       onChange={(e) => setFormData({ ...formData, brandHandle: e.target.value })}
                       className="bg-transparent w-full focus:outline-none"
-                      placeholder="@andrewkupriyanov или @company"
+                      placeholder="@marlex.expert или @company"
                     />
                   </div>
                 </div>
@@ -278,7 +278,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({ isOp
                     value={formData.authorName}
                     onChange={(e) => setFormData({ ...formData, authorName: e.target.value })}
                     className="bg-transparent w-full focus:outline-none"
-                    placeholder="Andrew Kupriyanov"
+                    placeholder="Marlex Creator"
                   />
                 </div>
               </div>

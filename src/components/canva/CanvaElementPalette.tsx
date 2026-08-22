@@ -277,7 +277,7 @@ export const CanvaElementPalette: React.FC<CanvaElementPaletteProps> = ({ onAddE
       x: 80,
       y: 80,
       width: 500,
-      text: activeProject.brandHandle || '@andrewkupriyanov',
+      text: activeProject.brandHandle || '@marlex.expert',
       fontSize: 34,
       fontWeight: 700,
       color: '#FFFFFF',

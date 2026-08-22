@@ -60,8 +60,8 @@ interface MarlexState {
 const DEFAULT_PROJECT: MarlexProject = {
   id: 'proj_default',
   name: 'Marlex Content Factory',
-  brandHandle: '@andrewkupriyanov',
-  authorName: 'Andrew Kupriyanov',
+  brandHandle: '@marlex.expert',
+  authorName: 'Marlex Creator',
   bgColor: '#9B6140',
   accentColor: '#D1B852',
   textColor: '#FFFFFF',
@@ -70,8 +70,8 @@ const DEFAULT_PROJECT: MarlexProject = {
   members: [
     {
       id: 'mem_owner',
-      name: 'Andrew Kupriyanov',
-      email: 'owner@marlex.ai',
+      name: 'Marlex Creator',
+      email: 'creator@marlex.ai',
       role: 'owner',
       status: 'active',
     }
@@ -274,8 +274,8 @@ export const useMarlexStore = create<MarlexState>()(
         const currentActive = get().activeProject;
         const currentProjects = get().projects;
 
-        const userName = user.name || (user.email ? user.email.split('@')[0] : 'Andrew Kupriyanov');
-        const userHandle = '@' + (user.email ? user.email.split('@')[0] : 'andrewkupriyanov');
+        const userName = user.name || (user.email ? user.email.split('@')[0] : 'Marlex Creator');
+        const userHandle = '@' + (user.email ? user.email.split('@')[0] : 'marlex.expert');
 
         if (currentActive.authorName.toLowerCase().includes('mary') || currentActive.brandHandle.toLowerCase().includes('shirokova') || currentActive.id === 'proj_default') {
           const updatedProj: MarlexProject = {

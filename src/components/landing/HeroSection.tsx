@@ -215,7 +215,7 @@ export const HeroSection: React.FC = () => {
                 }}
               >
                 <div className="flex justify-between items-center text-xs font-semibold text-white/80">
-                  <span className="tracking-wide">@andrewkupriyanov</span>
+                  <span className="tracking-wide">@marlex.expert</span>
                   <span className="font-mono">01 / 08</span>
                 </div>
 
@@ -229,7 +229,7 @@ export const HeroSection: React.FC = () => {
                 </div>
 
                 <div className="flex justify-between items-center text-[10px] text-white/70">
-                  <span>Andrew Kupriyanov</span>
+                  <span>Marlex Creator</span>
                   <span className="px-2.5 py-1 bg-black/40 rounded-full font-bold text-amber-300 border border-amber-400/20">
                     листай →
                   </span>
