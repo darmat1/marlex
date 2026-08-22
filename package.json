@@ -79,7 +79,6 @@
       ]
     },
     "dmg": {
-      "icon": "public/icon.png",
       "artifactName": "${productName}-${arch}.${ext}"
     },
     "win": {
@@ -95,8 +94,6 @@
       ]
     },
     "nsis": {
-      "installerIcon": "public/icon.png",
-      "uninstallerIcon": "public/icon.png",
       "artifactName": "${productName}-Setup.${ext}"
     },
     "publish": {
