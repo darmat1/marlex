@@ -182,7 +182,7 @@ export const ContextualInspector: React.FC<ContextualInspectorProps> = ({
                   <input
                     type="text"
                     list="font-family-list"
-                    value={selectedElement.fontFamily || activeProject.font || 'Source Sans 3'}
+                    value={selectedElement.fontFamily ?? activeProject.font ?? 'Source Sans 3'}
                     onChange={(e) => onUpdateElement({ fontFamily: e.target.value })}
                     className="w-full bg-zinc-900 border border-zinc-800 text-xs text-zinc-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-amber-500 mb-3"
                     placeholder="Например: Montserrat, Oswald..."
