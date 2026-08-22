@@ -133,3 +133,31 @@ export interface GenerationResult {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface AppUpdateInfo {
+  hasUpdate: boolean;
+  currentVersion: string;
+  latestVersion: string;
+  releaseName: string;
+  releaseNotes?: string;
+  publishedAt?: string;
+  downloadUrl?: string;
+  htmlUrl?: string;
+}
+
+export interface ElectronAPI {
+  platform: string;
+  saveFile: (options: { defaultPath: string; filters: any[] }) => Promise<{ canceled: boolean; filePath?: string } | null>;
+  executeCLI: (opts: { cliType: string; prompt: string; model?: string }) => Promise<string>;
+  detectCLIs: () => Promise<Record<string, boolean>>;
+  getAppVersion?: () => Promise<string>;
+  checkForUpdates?: () => Promise<AppUpdateInfo>;
+  openExternalUrl?: (url: string) => Promise<void>;
+}
+
+declare global {
+  interface Window {
+    electronAPI?: ElectronAPI;
+  }
+}
+

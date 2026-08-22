@@ -1,16 +1,6 @@
 import { LLMConfig, GenerationResult, SlideItem } from '../../types';
 import { buildMarketingSystemPrompt } from '../prompts/presets';
 
-declare global {
-  interface Window {
-    electronAPI?: {
-      platform: string;
-      saveFile: (options: any) => Promise<any>;
-      executeCLI: (opts: { cliType: string; prompt: string; model?: string }) => Promise<string>;
-      detectCLIs: () => Promise<Record<string, boolean>>;
-    };
-  }
-}
 
 /**
  * Extracts requested number of slides from user prompt (e.g. "из 9 слайдов", "6 slides")

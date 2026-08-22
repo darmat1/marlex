@@ -7,4 +7,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   executeCLI: (opts: { cliType: string; prompt: string; model?: string }) =>
     ipcRenderer.invoke('cli:execute', opts),
   detectCLIs: () => ipcRenderer.invoke('cli:detect'),
+  getAppVersion: () => ipcRenderer.invoke('updater:getVersion'),
+  checkForUpdates: () => ipcRenderer.invoke('updater:check'),
+  openExternalUrl: (url: string) => ipcRenderer.invoke('shell:openExternal', url),
 });
+
