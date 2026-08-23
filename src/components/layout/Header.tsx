@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useClickOutside } from '../../lib/hooks/useClickOutside';
 import { 
   FolderGit2, 
   Layers, 
@@ -18,6 +19,7 @@ import { exportSlidesToZip, exportSlidesToPdf } from '../../lib/canvas/export-ut
 import { signOut } from '../../lib/auth-client';
 import { ModelSelectorDropdown } from './ModelSelectorDropdown';
 import { ProjectSettingsModal } from '../projects/ProjectSettingsModal';
+import { DEFAULT_BG_COLOR } from '../../lib/constants';
 
 interface HeaderProps {
   user: {
@@ -52,18 +54,8 @@ export const Header: React.FC<HeaderProps> = ({
   const exportMenuRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
-        setIsExportMenuOpen(false);
-      }
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
-        setIsUserMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  useClickOutside(exportMenuRef, () => setIsExportMenuOpen(false));
+  useClickOutside(userMenuRef, () => setIsUserMenuOpen(false));
 
   const handleExportZip = async () => {
     if (!currentResult) return;
@@ -143,19 +135,21 @@ export const Header: React.FC<HeaderProps> = ({
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-900/80 hover:bg-zinc-800 text-xs text-zinc-300 hover:text-white transition-all cursor-pointer border border-zinc-800/60"
             title="Настройки проекта и команда"
           >
-            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: activeProject.bgColor || '#9B6140' }} />
+            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: activeProject.bgColor || DEFAULT_BG_COLOR }} />
             <span className="font-semibold max-w-[140px] truncate">{activeProject.name}</span>
             <ChevronDown className="w-3 h-3 text-zinc-500" />
           </button>
         </div>
 
         {/* 2. CENTER ZONE: Segmented View Switcher */}
-        <div className="flex items-center bg-zinc-900/90 p-0.5 rounded-lg border border-zinc-800/80 app-no-drag">
+        <div role="tablist" aria-label="Раздел студии" className="flex items-center bg-zinc-900/90 p-0.5 rounded-lg border border-zinc-800/80 app-no-drag">
           <button
+            role="tab"
+            aria-selected={activeTab === 'studio'}
             onClick={() => setActiveTab('studio')}
             className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
-              activeTab === 'studio' 
-                ? 'bg-zinc-800 text-white shadow-sm' 
+              activeTab === 'studio'
+                ? 'bg-zinc-800 text-white shadow-sm'
                 : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >
@@ -163,10 +157,12 @@ export const Header: React.FC<HeaderProps> = ({
             Слайды
           </button>
           <button
+            role="tab"
+            aria-selected={activeTab === 'channels'}
             onClick={() => setActiveTab('channels')}
             className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
-              activeTab === 'channels' 
-                ? 'bg-zinc-800 text-white shadow-sm' 
+              activeTab === 'channels'
+                ? 'bg-zinc-800 text-white shadow-sm'
                 : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >

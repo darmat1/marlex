@@ -34,7 +34,7 @@ class ErrorBoundary extends React.Component<
           <div className="flex gap-3">
             <button
               onClick={() => {
-                localStorage.removeItem('marlex-storage');
+                localStorage.removeItem('marlex-content-storage-v5');
                 window.location.reload();
               }}
               className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold rounded-xl transition-colors cursor-pointer"

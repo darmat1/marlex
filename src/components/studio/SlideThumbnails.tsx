@@ -23,6 +23,16 @@ export const SlideThumbnails: React.FC = () => {
           <div
             key={slide.id || idx}
             onClick={() => setActiveSlideIndex(idx)}
+            role="button"
+            tabIndex={0}
+            aria-current={isActive}
+            aria-label={`Слайд ${slide.slideNumber}`}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setActiveSlideIndex(idx);
+              }
+            }}
             className={`relative flex-shrink-0 cursor-pointer rounded-lg p-1 transition-all group ${
               isActive
                 ? 'ring-2 ring-amber-500 bg-amber-500/10'

@@ -16,6 +16,7 @@ import { useMarlexStore } from '../../lib/store/useMarlexStore';
 import { CLIAgent } from '../../types';
 import { checkAppUpdate, openDownloadUrl } from '../../lib/updater';
 import { isElectron } from '../../lib/runtime';
+import { Modal } from '../ui/Modal';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -132,8 +133,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 select-none">
-      <div className="bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-        
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        labelledBy="settings-modal-title"
+        className="bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+      >
         {/* Header */}
         <div className="px-6 py-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-950/50">
           <div className="flex items-center gap-2.5">
@@ -141,7 +146,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
               {inElectron ? <Terminal className="w-4 h-4" /> : <Key className="w-4 h-4" />}
             </div>
             <div>
-              <h2 className="text-sm font-bold text-white tracking-wide">
+              <h2 id="settings-modal-title" className="text-sm font-bold text-white tracking-wide">
                 {inElectron ? 'Настройки AI Агентов и Подписок Mac' : 'Настройки AI Моделей и API Ключей'}
               </h2>
               <p className="text-[11px] text-zinc-400">
@@ -151,6 +156,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
           </div>
           <button
             onClick={onClose}
+            aria-label="Закрыть настройки"
             className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
@@ -215,6 +221,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                     <div
                       key={agent.id}
                       onClick={() => setLLMConfig({ cliAgent: agent.id })}
+                      role="button"
+                      tabIndex={0}
+                      aria-pressed={isSelected}
+                      aria-label={agent.name}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setLLMConfig({ cliAgent: agent.id });
+                        }
+                      }}
                       className={`p-3.5 rounded-2xl border cursor-pointer transition-all ${
                         isSelected
                           ? 'bg-amber-500/10 border-amber-500/60 shadow-lg shadow-amber-500/10'
@@ -403,7 +419,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
           </button>
         </div>
 
-      </div>
+      </Modal>
     </div>
   );
 };

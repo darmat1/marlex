@@ -1,0 +1,157 @@
+{
+  "schema_version": 1,
+  "skill_version": "0.5.2",
+  "config_sha256": "sha256:71454908f5c1624fbf2518ec38070c8c2f10e53e6681395d1f9461a5b2bdefc5",
+  "domains": [
+    "architecture",
+    "stack",
+    "security",
+    "testing",
+    "ui",
+    "data"
+  ],
+  "hosts": [
+    "claude",
+    "codex"
+  ],
+  "artifacts": [
+    {
+      "id": "context",
+      "path": "PROJECT_CONTEXT.md",
+      "kind": "owned_file",
+      "sha256": "sha256:5d0e6fe3e4841953df701818a6f113cf9f4d00d9bbcd24c34782eed2a26185d5"
+    },
+    {
+      "id": "architecture",
+      "path": "repodocs/architecture.md",
+      "kind": "owned_file",
+      "sha256": "sha256:ce8996e4f43a968c3a5749a4c32910ae242fce00c4e46e17678ec7fcd5590856"
+    },
+    {
+      "id": "techstack",
+      "path": "repodocs/techstack.md",
+      "kind": "owned_file",
+      "sha256": "sha256:5d49eb1724d253f7fbb38e0c8778f322e47eae3f26d587b1c5bc220bd3bceceb"
+    },
+    {
+      "id": "security",
+      "path": "repodocs/security.md",
+      "kind": "owned_file",
+      "sha256": "sha256:ec73cd1ef972a3af2bef16d9d30aa6e6a76e2cd178876ead6ce13a9326260276"
+    },
+    {
+      "id": "testing",
+      "path": "repodocs/testing.md",
+      "kind": "owned_file",
+      "sha256": "sha256:34cb17b2888e22e8fcd62e06043d3c272e84f22af44a2ad6ad26b72d4f8b860c"
+    },
+    {
+      "id": "edge_cases",
+      "path": "repodocs/edge-cases.md",
+      "kind": "owned_file",
+      "sha256": "sha256:a4914d23f9769b9533e08eca96eb74ce009ddd8c0b965a0846fa4253973ca661"
+    },
+    {
+      "id": "ui_kit",
+      "path": "repodocs/ui-kit.md",
+      "kind": "owned_file",
+      "sha256": "sha256:eefb95a2cde71b7de03ed368313df85230bd32a0e0591b8ec28dfd1926018683"
+    },
+    {
+      "id": "data_model",
+      "path": "repodocs/data-model.md",
+      "kind": "owned_file",
+      "sha256": "sha256:38004777b99bc1b7eec5c59741fbb4a2f22bd6a75ed8209ee9fc57e629812958"
+    },
+    {
+      "id": "decisions",
+      "path": "repodocs/decisions.md",
+      "kind": "owned_file",
+      "sha256": "sha256:594b74a6bfdc022d6eb6696239e848bd9100302c6ba37b165ce4b6895edb0d2a"
+    },
+    {
+      "id": "legacy_warning",
+      "path": "repodocs/LegacyWarning.md",
+      "kind": "owned_file",
+      "sha256": "sha256:a2988b1415850a30cd619c26eed47490381484e402a0de1642fa873423c9afee"
+    },
+    {
+      "id": "migration_backlog",
+      "path": "repodocs/migration-backlog.md",
+      "kind": "owned_file",
+      "sha256": "sha256:598094be3ac63f3bd2729b988274f3a696112152d7a9898da68fcd0722175b9a"
+    },
+    {
+      "id": "project_map",
+      "path": "repodocs/project-map.json",
+      "kind": "owned_file",
+      "sha256": "sha256:29311bf6ea6dc438022fba1fef16db17485823176df7a29a66c46742daf59d5e"
+    },
+    {
+      "id": "finding_stack",
+      "path": "repodocs/audit/findings/stack.json",
+      "kind": "owned_file",
+      "sha256": "sha256:467c247eef77fb6beb4a9f3cb86851a6de74b2d9f101d1f788c470e4a65fb327"
+    },
+    {
+      "id": "finding_architecture",
+      "path": "repodocs/audit/findings/architecture.json",
+      "kind": "owned_file",
+      "sha256": "sha256:b76288eced65c51e9d835de1d304d2c2880342c8dd5ca1726cfa2ebee37330ea"
+    },
+    {
+      "id": "finding_bloat",
+      "path": "repodocs/audit/findings/bloat.json",
+      "kind": "owned_file",
+      "sha256": "sha256:2be8d5f7f88319fb7055344f03203903d6014e1d226b61afc62921c6de54cc35"
+    },
+    {
+      "id": "finding_security",
+      "path": "repodocs/audit/findings/security.json",
+      "kind": "owned_file",
+      "sha256": "sha256:41da7229eb52e80d9ac11a68ead6f8ce84c778f6fe88ea38db67c95ef90eb876"
+    },
+    {
+      "id": "finding_testing",
+      "path": "repodocs/audit/findings/testing.json",
+      "kind": "owned_file",
+      "sha256": "sha256:e200fb99e8d856719950395fea12343db443b3487b956fbbc5e711c9f3f0403d"
+    },
+    {
+      "id": "finding_ui",
+      "path": "repodocs/audit/findings/ui.json",
+      "kind": "owned_file",
+      "sha256": "sha256:15e51fc370518e344eba65f62eb6c55f73e8f6fa20787b32b68b8393dcad7265"
+    },
+    {
+      "id": "finding_data",
+      "path": "repodocs/audit/findings/data.json",
+      "kind": "owned_file",
+      "sha256": "sha256:3d7b1573b8898193b77ac5c022d8933d7762f353c964cffd43d53b113ee89c3d"
+    },
+    {
+      "id": "audit_inventory",
+      "path": "repodocs/audit/inventory.json",
+      "kind": "owned_file",
+      "sha256": "sha256:c15920f66b65165aba8bf7d6ab9c96ea0c3652b5383e34258d7a78829590928b"
+    },
+    {
+      "id": "drift_report",
+      "path": "repodocs/audit/drift-report.md",
+      "kind": "owned_file",
+      "sha256": "sha256:a74a9d3a4e3c8a5fdc0917de2e093c8dd5e3b86a23f71ae856bb294282f453a3"
+    },
+    {
+      "id": "claude_host",
+      "path": "CLAUDE.md",
+      "kind": "managed_block",
+      "sha256": "sha256:d08a7ebf4353f890db8a0fc92ba712fb60ee9cbae957d3edcf549dde329af388"
+    },
+    {
+      "id": "codex_host",
+      "path": "AGENTS.md",
+      "kind": "managed_block",
+      "sha256": "sha256:e33677473ccec7d5496c7be0ada44b81dab7ccbb802bc705e8c877c47fad650d"
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useClickOutside } from '../../lib/hooks/useClickOutside';
 import { 
   Sliders, 
   Tag, 
@@ -23,6 +24,7 @@ import {
 } from 'lucide-react';
 import { CanvasElement, SlideItem, TextPositionMode, OverlayGradientMode } from '../../types';
 import { useMarlexStore } from '../../lib/store/useMarlexStore';
+import { DEFAULT_ACCENT_COLOR } from '../../lib/constants';
 
 interface ContextualInspectorProps {
   slide: SlideItem;
@@ -36,7 +38,7 @@ interface ContextualInspectorProps {
 
 const COLOR_SWATCHES = [
   { name: 'Белый', value: '#FFFFFF' },
-  { name: 'Золото', value: '#D1B852' },
+  { name: 'Золото', value: DEFAULT_ACCENT_COLOR },
   { name: 'Янтарь', value: '#F59E0B' },
   { name: 'Светло-серый', value: '#E4E4E7' },
   { name: 'Темный', value: '#18181B' },
@@ -45,7 +47,7 @@ const COLOR_SWATCHES = [
 const BG_SWATCHES = [
   { name: 'Без фона', value: 'transparent' },
   { name: 'Темное стекло', value: 'rgba(0, 0, 0, 0.65)' },
-  { name: 'Золото', value: '#D1B852' },
+  { name: 'Золото', value: DEFAULT_ACCENT_COLOR },
   { name: 'Светлое стекло', value: 'rgba(255, 255, 255, 0.12)' },
 ];
 
@@ -73,15 +75,7 @@ const FontPicker = ({ value, onChange, localFonts }: { value: string, onChange: 
     if (isOpen) setTimeout(() => scrollSelectedIntoView(value), 0);
   }, [isOpen]);
 
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  useClickOutside(wrapperRef, () => setIsOpen(false));
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
@@ -251,6 +245,7 @@ export const ContextualInspector: React.FC<ContextualInspectorProps> = ({
             onClick={onDeselect}
             className="text-[11px] text-zinc-400 hover:text-zinc-200 flex items-center gap-0.5 cursor-pointer"
             title="Снять выделение"
+                aria-label="Снять выделение"
           >
             <X className="w-3.5 h-3.5" />
           </button>
@@ -273,6 +268,7 @@ export const ContextualInspector: React.FC<ContextualInspectorProps> = ({
                   onClick={onDuplicateElement}
                   className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-800 transition-colors cursor-pointer"
                   title="Дублировать элемент"
+                aria-label="Дублировать элемент"
                 >
                   <Copy className="w-3.5 h-3.5" />
                 </button>
@@ -280,6 +276,7 @@ export const ContextualInspector: React.FC<ContextualInspectorProps> = ({
                   onClick={onDeleteElement}
                   className="p-1.5 rounded-lg bg-zinc-900 hover:bg-red-500/20 text-zinc-400 hover:text-red-400 border border-zinc-800 transition-colors cursor-pointer"
                   title="Удалить элемент"
+                aria-label="Удалить элемент"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
@@ -349,6 +346,7 @@ export const ContextualInspector: React.FC<ContextualInspectorProps> = ({
                         }`}
                         style={{ backgroundColor: swatch.value }}
                         title={swatch.name}
+                aria-label={swatch.name}
                       />
                     ))}
                     <div className="flex items-center gap-1 ml-auto p-1 bg-zinc-900 rounded-lg border border-zinc-800">
@@ -564,6 +562,7 @@ export const ContextualInspector: React.FC<ContextualInspectorProps> = ({
                                 : 'border-zinc-800 opacity-70 hover:opacity-100 hover:border-zinc-700'
                             }`}
                             title={isSelected ? 'Применено к слайду (кликните, чтобы убрать)' : 'Применить к слайду'}
+                aria-label={isSelected ? 'Применено к слайду (кликните, чтобы убрать)' : 'Применить к слайду'}
                           >
                             <img src={imgUrl} alt={`Asset ${i}`} className={`w-full h-full object-cover ${isSelected ? 'brightness-75' : ''}`} />
                             {isSelected && (

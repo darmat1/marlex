@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { ClientProfile, GenerationResult, LLMConfig, SlideItem, MarlexProject, TextPositionMode } from '../../types';
 import { generateContentPackage } from '../ai/llm-client';
+import { DEFAULT_BG_COLOR, DEFAULT_ACCENT_COLOR } from '../constants';
 
 interface MarlexState {
   // Projects & Team Workspaces
@@ -62,8 +63,8 @@ const DEFAULT_PROJECT: MarlexProject = {
   name: 'Marlex Content Factory',
   brandHandle: '@marlex.expert',
   authorName: 'Marlex Creator',
-  bgColor: '#9B6140',
-  accentColor: '#D1B852',
+  bgColor: DEFAULT_BG_COLOR,
+  accentColor: DEFAULT_ACCENT_COLOR,
   textColor: '#FFFFFF',
   font: 'Source Sans 3',
   photoOpacity: 15,
@@ -382,9 +383,9 @@ export const useMarlexStore = create<MarlexState>()(
         });
       },
 
-      bgColor: '#9B6140',
+      bgColor: DEFAULT_BG_COLOR,
       setBgColor: (color) => set({ bgColor: color }),
-      accentColor: '#D1B852',
+      accentColor: DEFAULT_ACCENT_COLOR,
       setAccentColor: (color) => set({ accentColor: color }),
       photoOpacity: 15,
       setPhotoOpacity: (val) => set({ photoOpacity: val }),
@@ -517,6 +518,17 @@ export const useMarlexStore = create<MarlexState>()(
     }),
     {
       name: 'marlex-content-storage-v5',
+      // BYOK provider keys are secrets — never persist them to localStorage in plaintext.
+      // They stay in memory for the session and must be re-entered after a reload.
+      partialize: (state) => ({
+        ...state,
+        llmConfig: {
+          ...state.llmConfig,
+          openaiKey: '',
+          anthropicKey: '',
+          geminiKey: '',
+        },
+      }),
     }
   )
 );

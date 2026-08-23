@@ -1,0 +1,254 @@
+{
+  "schema_version": 2,
+  "run_id": "audit-20260823T005819Z-eb01",
+  "auditor": "data",
+  "scanned_at": "2026-08-22T22:02:29Z",
+  "scope": {
+    "included": [
+      "drizzle.config.ts",
+      "server/src/db/schema.ts",
+      "server/src/db/index.ts",
+      "server/src/auth.ts",
+      "server/src/index.ts",
+      "api/index.ts",
+      "vercel.json",
+      "package.json",
+      "src/lib/store/useMarlexStore.ts",
+      "src/types/index.ts",
+      "src/components/landing/FAQSection.tsx",
+      ".env.example",
+      ".gitignore"
+    ],
+    "excluded": [
+      "node_modules",
+      "dist",
+      "dist-electron",
+      "build",
+      "scratch"
+    ],
+    "unscanned": [
+      "electron/main.ts",
+      "electron/preload.ts",
+      "src/lib/ai/llm-client.ts",
+      "docs",
+      "scripts"
+    ],
+    "limitations": [
+      "No database connection was made; DATABASE_URL/Postgres/Supabase were not contacted, and drizzle-kit was not executed. All schema and migration claims are from static repository files only.",
+      "electron/main.ts and electron/preload.ts were only grep-scanned for a local-database dependency (better-sqlite3), not fully read for other local persistence paths.",
+      "External LLM provider calls in src/lib/ai/llm-client.ts (OpenAI/Anthropic/Gemini) are outbound API contracts to third-party services, not this project's own persisted/shared state, and were out of scope for this pass beyond noting their presence.",
+      "jCodeMunch reference/importer tools were not used for this run because the claims below (no fetch call to /api/projects anywhere in src/, no route for /api/projects in api/index.ts) were established directly by reading the relevant files and by a repository-wide grep, which is a stronger channel than the index for confirming an absence."
+    ]
+  },
+  "findings": [
+    {
+      "id": "data-001",
+      "kind": "data-access-boundary",
+      "title": "Postgres projects/clientProfiles tables are unreachable in production: the Vercel serverless entry never routes /api/projects",
+      "severity": "high",
+      "confidence": "high",
+      "identity": {
+        "path": "api/index.ts",
+        "assertion": "The production Vercel serverless handler (api/index.ts, the only file under api/, targeted by vercel.json's rewrite of /api/(.*) to /api) only implements routing for pathname === '/api/health' and pathname.startsWith('/api/auth/'); any other path (including /api/projects) falls through to the 404 branch. The /api/projects GET and POST routes exist only in server/src/index.ts, a separate Hono app started by the 'server:dev' npm script (tsx server/src/index.ts), which is not deployed by vercel.json and is not referenced anywhere by api/index.ts.",
+        "symbol": "handler"
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "api/index.ts",
+          "line": 213,
+          "detail": "Main Handler switches only on '/api/health' and startsWith('/api/auth/'); default branch returns 404 { error: 'Not found', path: pathname }. No import of server/src/index.ts or its projects routes."
+        },
+        {
+          "path": "vercel.json",
+          "line": 5,
+          "detail": "rewrites: '/api/(.*)' -> '/api' (i.e. api/index.ts is the sole serverless function for all /api/* traffic in production)."
+        },
+        {
+          "path": "server/src/index.ts",
+          "line": 34,
+          "detail": "app.get('/api/projects', ...) and app.post('/api/projects', ...) are defined only in this file's standalone Hono app, which is started via serve() only 'if (!process.env.VERCEL)' (line 71) — i.e. never in the Vercel deployment."
+        },
+        {
+          "path": "package.json",
+          "detail": "scripts.server:dev = 'tsx server/src/index.ts' is the only way this Hono app (and its /api/projects routes) runs; there is no build/deploy script that bundles server/src/index.ts into the Vercel function."
+        }
+      ],
+      "verification": {
+        "status": "confirmed",
+        "counterevidence": [],
+        "note": "Independently confirmed alongside architecture-001/stack-001: api/index.ts (sole Vercel production entry per vercel.json) does not implement /api/projects; server/src/index.ts, which does, is never deployed there."
+      }
+    },
+    {
+      "id": "data-002",
+      "kind": "data-contract-conflict",
+      "title": "Client's real project data model (MarlexProject, localStorage) has no field overlap with the Postgres projects table it nominally mirrors",
+      "severity": "medium",
+      "confidence": "high",
+      "identity": {
+        "path": "src/types/index.ts",
+        "assertion": "MarlexProject (src/types/index.ts, the type actually used app-wide via the zustand store in src/lib/store/useMarlexStore.ts) has fields id, name, brandHandle, authorName, bgColor, accentColor, textColor, font, photoOpacity, members, createdAt, updatedAt. The Postgres `projects` table (server/src/db/schema.ts) has an entirely different, non-overlapping shape: id, userId, clientProfileId, title, rawInput, slidesJson, telegramPost, linkedInPost, threadsJson, status, createdAt, updatedAt. No route in the codebase converts between the two shapes.",
+        "symbol": "MarlexProject"
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "src/types/index.ts",
+          "line": 28,
+          "detail": "export interface MarlexProject { id; name; brandHandle; authorName; bgColor; accentColor; textColor; font; photoOpacity; members; createdAt; updatedAt }"
+        },
+        {
+          "path": "server/src/db/schema.ts",
+          "line": 70,
+          "detail": "export const projects = pgTable('projects', { id, userId, clientProfileId, title, rawInput, slidesJson, telegramPost, linkedInPost, threadsJson, status, createdAt, updatedAt })"
+        },
+        {
+          "path": "src/lib/store/useMarlexStore.ts",
+          "line": 519,
+          "detail": "persist(...) middleware config name: 'marlex-content-storage-v5' — this is the actual runtime store for MarlexProject[]; a repo-wide search for 'api/projects' or 'fetch(' targeting the API found zero call sites in src/."
+        },
+        {
+          "path": "src/components/landing/FAQSection.tsx",
+          "line": 46,
+          "detail": "FAQ copy states (Russian): carousel data and history are stored locally on the user's computer and are not sent to or saved on third-party servers — consistent with the store using only localStorage persistence, not the /api/projects endpoints."
+        }
+      ],
+      "verification": {
+        "status": "not-required",
+        "counterevidence": [],
+        "note": ""
+      }
+    },
+    {
+      "id": "data-003",
+      "kind": "data-access-boundary",
+      "title": "/api/projects has no auth check: GET returns all users' projects unfiltered, POST inserts rows with no userId and no session validation",
+      "severity": "high",
+      "confidence": "high",
+      "identity": {
+        "path": "server/src/index.ts",
+        "assertion": "app.get('/api/projects') runs `db.select().from(projects)` with no WHERE clause and no session/auth check, returning every row in the table to any caller. app.post('/api/projects') builds `newProject` without ever reading the caller's session or setting `userId` (the projects.userId column, a FK to user.id, is simply omitted), and performs no better-auth session check before inserting.",
+        "symbol": "app.get('/api/projects'), app.post('/api/projects')"
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "server/src/index.ts",
+          "line": 34,
+          "detail": "app.get('/api/projects', async (c) => { const allProjects = await db.select().from(projects); return c.json({ success: true, data: allProjects }); }) — no auth.api.getSession() call, no eq(projects.userId, ...) filter."
+        },
+        {
+          "path": "server/src/index.ts",
+          "line": 44,
+          "detail": "app.post('/api/projects', ...) builds newProject = { id, title, rawInput, slidesJson, telegramPost, linkedInPost, threadsJson, status, createdAt, updatedAt } — userId is never assigned, so every insert leaves projects.userId NULL despite the column existing specifically to scope ownership."
+        },
+        {
+          "path": "server/src/db/schema.ts",
+          "line": 72,
+          "detail": "projects.userId is nullable (references user.id, onDelete 'set null'), which is what allows the POST handler's omission to silently succeed instead of failing at the DB layer."
+        }
+      ],
+      "verification": {
+        "status": "confirmed",
+        "counterevidence": [],
+        "note": "Independently verified: server/src/index.ts (the only file implementing /api/projects) is gated by `if (!process.env.VERCEL)` and started only via `npm run server:dev`; the deployed Vercel production entry (api/index.ts, sole target of vercel.json's /api/(.*) rewrite) does not implement /api/projects at all. No importer, CI step, or deploy config runs server/src/index.ts anywhere besides local development. The code-level vulnerability (no session check, no userId scoping) is confirmed as written; it is not reachable on the public production deployment today."
+      }
+    },
+    {
+      "id": "data-004",
+      "kind": "evolution-gap",
+      "title": "No Drizzle migrations exist or are tracked in git despite drizzle.config.ts targeting a migrations directory",
+      "severity": "medium",
+      "confidence": "high",
+      "identity": {
+        "path": "drizzle.config.ts",
+        "assertion": "drizzle.config.ts declares out: './drizzle' as the migrations directory, but no './drizzle' directory exists in the working tree and git log for 'drizzle/' returns no commits. package.json has no db:generate/db:push/db:migrate script wiring drizzle-kit (a devDependency) into any workflow, so schema changes to server/src/db/schema.ts have no versioned, reviewable, or rollback-capable migration path recorded in the repo.",
+        "symbol": "defineConfig"
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "drizzle.config.ts",
+          "detail": "defineConfig({ schema: './server/src/db/schema.ts', out: './drizzle', dialect: 'postgresql', dbCredentials: { url: process.env.DATABASE_URL! } })"
+        },
+        {
+          "path": "package.json",
+          "detail": "scripts block contains only dev, build, dev:electron, build:electron, server:dev — no drizzle-kit generate/push/migrate script; drizzle-kit ^0.30.4 is present only as a devDependency with no invocation site found in the repo."
+        }
+      ],
+      "verification": {
+        "status": "not-required",
+        "counterevidence": [],
+        "note": ""
+      }
+    },
+    {
+      "id": "data-005",
+      "kind": "data-contract-conflict",
+      "title": "Auth/schema definitions are hand-duplicated between server/src/db/schema.ts and api/index.ts with no shared source",
+      "severity": "medium",
+      "confidence": "high",
+      "identity": {
+        "path": "api/index.ts",
+        "assertion": "api/index.ts re-declares the user/session/account/verification/projects pgTable definitions inline (rather than importing server/src/db/schema.ts), per commit 9ffd501c ('Make Vercel API directory completely self-contained with internal schema, db and auth'). The two copies already differ in the auth config that consumes them: api/index.ts's betterAuth() adds 'file://' and '*' to trustedOrigins and sets advanced.defaultCookieAttributes (sameSite: 'none', secure: true), neither of which exist in server/src/auth.ts. A schema.ts change (e.g. adding a column) will not propagate to api/index.ts unless someone manually edits both files.",
+        "symbol": "projects, user, session, account, verification (duplicated pgTable declarations)"
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "api/index.ts",
+          "detail": "Inline pgTable('user'/'session'/'account'/'verification'/'projects', ...) definitions duplicate server/src/db/schema.ts field-for-field at the time of this audit, but are maintained as a separate, unimported copy."
+        },
+        {
+          "path": "server/src/db/schema.ts",
+          "detail": "Canonical schema used by drizzle.config.ts and by server/src/db/index.ts's `drizzle(client, { schema })`."
+        },
+        {
+          "path": "api/index.ts",
+          "detail": "betterAuth({ ... trustedOrigins: [..., 'file://', '*'], advanced: { defaultCookieAttributes: { sameSite: 'none', secure: true } } }) differs from server/src/auth.ts's betterAuth({ ... trustedOrigins: [...] }) which has neither 'file://'/'*' nor an `advanced` block — direct evidence the two copies have already drifted."
+        }
+      ],
+      "verification": {
+        "status": "not-required",
+        "counterevidence": [],
+        "note": ""
+      }
+    },
+    {
+      "id": "data-006",
+      "kind": "integrity-risk",
+      "title": "POST /api/projects always INSERTs, so its documented 'create or update' behavior fails with a primary-key violation on repeat calls with the same id",
+      "severity": "medium",
+      "confidence": "high",
+      "identity": {
+        "path": "server/src/index.ts",
+        "assertion": "The route comment 'Database API: Create or update project' implies upsert semantics, but the handler unconditionally calls `db.insert(projects).values(newProject)` with no onConflictDoUpdate and no prior existence check. projects.id is a non-generated text primaryKey, so re-POSTing the same body.id (the natural way a client would 'update' a project it already created) throws a unique-constraint violation caught only by the generic catch block, returning a 500 rather than performing an update.",
+        "symbol": "app.post('/api/projects')"
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "server/src/index.ts",
+          "line": 43,
+          "detail": "// Database API: Create or update project"
+        },
+        {
+          "path": "server/src/index.ts",
+          "line": 60,
+          "detail": "await db.insert(projects).values(newProject); — no .onConflictDoUpdate(...), no SELECT-then-branch logic; id is taken directly from body.id (line 48: `id: body.id || 'proj_' + Date.now()`) with no server-side existence check."
+        },
+        {
+          "path": "server/src/db/schema.ts",
+          "line": 71,
+          "detail": "projects.id = text('id').primaryKey() — client-supplied, not DB-generated, so a repeated id from the same client is exactly the case an 'update' would hit."
+        }
+      ],
+      "verification": {
+        "status": "not-required",
+        "counterevidence": [],
+        "note": ""
+      }
+    }
+  ]
+}

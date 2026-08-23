@@ -1,0 +1,288 @@
+{
+  "schema_version": 2,
+  "run_id": "audit-20260823T005819Z-eb01",
+  "auditor": "ui",
+  "scanned_at": "2026-08-22T22:03:09Z",
+  "scope": {
+    "included": [
+      "src/components",
+      "src/App.tsx",
+      "src/index.css",
+      "src/components/landing",
+      "src/components/auth",
+      "src/components/canva",
+      "src/components/channels",
+      "src/components/layout",
+      "src/components/projects",
+      "src/components/settings",
+      "src/components/studio",
+      "src/components/updater"
+    ],
+    "excluded": [],
+    "unscanned": [],
+    "limitations": [
+      "Interactive behavior (dropdown keyboard handling, modal focus trapping, tab order) was assessed by static reading of JSX/handlers, not by running the app in a browser or with assistive-technology emulation.",
+      "jCodeMunch was not used for this run beyond what plain text search already covered; all findings are grounded in direct file reads and repo-wide grep."
+    ]
+  },
+  "findings": [
+    {
+      "id": "ui-001",
+      "kind": "inconsistent-presentation-system",
+      "title": "Landing page mixes new canvas/accent theme tokens with hardcoded zinc-* text-color utilities",
+      "severity": "medium",
+      "confidence": "high",
+      "identity": {
+        "path": "src/components/landing",
+        "assertion": "Landing surface components use the new @theme tokens (bg-canvas, text-accent, border-line) for structural/brand colors but fall back to hardcoded Tailwind zinc-* classes (text-zinc-400/500/600/100/200/300, text-white) for body and secondary text in every landing file, because src/index.css's @theme block defines only --color-accent, --color-accent-dark, --color-canvas(-2/-3) and --color-line and no text/foreground token.",
+        "symbol": "@theme (src/index.css)"
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "src/index.css",
+          "line": 3,
+          "detail": "@theme defines only --color-accent, --color-accent-dark, --color-canvas/-2/-3, --color-line; no neutral text/foreground token exists for the redesigned system."
+        },
+        {
+          "path": "src/components/landing/HeroSection.tsx",
+          "detail": "25 occurrences of hardcoded text-zinc-* classes alongside 31 uses of the new accent token and 14 uses of canvas tokens in the same file."
+        },
+        {
+          "path": "src/components/landing/ComparisonSection.tsx",
+          "line": 41,
+          "detail": "text-zinc-400/600 used for body copy next to text-accent/bg-canvas token usage elsewhere in the same file."
+        },
+        {
+          "path": "src/components/landing/LandingFooter.tsx",
+          "line": 17,
+          "detail": "text-zinc-500 and text-zinc-600 used for footer copy, no equivalent token exists to express muted text in the new system."
+        },
+        {
+          "path": "src/components/landing/FAQSection.tsx",
+          "line": 83,
+          "detail": "text-zinc-400/500 used for FAQ answer copy alongside bg-canvas-2/canvas-3 tokens."
+        }
+      ],
+      "verification": {
+        "status": "not-required",
+        "counterevidence": [],
+        "note": ""
+      }
+    },
+    {
+      "id": "ui-002",
+      "kind": "duplicate-interface-unit",
+      "title": "Three modal dialogs each hand-roll their own overlay/close markup instead of sharing one primitive",
+      "severity": "medium",
+      "confidence": "high",
+      "identity": {
+        "path": "src/components/settings/SettingsModal.tsx",
+        "assertion": "SettingsModal, ProjectSettingsModal, and UpdateModal each independently implement a fixed inset-0 backdrop, centered card, header row, and X close button with no shared Modal/Dialog component; there is no src/components/ui (or similar) primitives directory in the repository."
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "src/components/settings/SettingsModal.tsx",
+          "line": 134,
+          "detail": "fixed inset-0 z-50 bg-black/80 backdrop-blur-md ... close button at line 152-155 (X icon, onClick={onClose})."
+        },
+        {
+          "path": "src/components/projects/ProjectSettingsModal.tsx",
+          "line": 152,
+          "detail": "fixed inset-0 z-50 ... bg-black/70 backdrop-blur-sm ... duplicate close button pattern at line 170-174."
+        },
+        {
+          "path": "src/components/updater/UpdateModal.tsx",
+          "line": 16,
+          "detail": "fixed inset-0 z-50 ... bg-black/70 backdrop-blur-sm ... duplicate close button pattern at line 31-34."
+        },
+        {
+          "path": "src/components",
+          "detail": "No components/ui or other shared primitives directory exists; each of the three modals reimplements the same overlay/close structure independently."
+        }
+      ],
+      "verification": {
+        "status": "not-required",
+        "counterevidence": [],
+        "note": ""
+      }
+    },
+    {
+      "id": "ui-003",
+      "kind": "hardcoded-design-values",
+      "title": "Default brand accent/background hex literals ('#D1B852', '#9B6140') duplicated across 5+ files with no shared constant",
+      "severity": "medium",
+      "confidence": "high",
+      "identity": {
+        "path": "src/components/projects/ProjectSettingsModal.tsx",
+        "assertion": "The default project accent color '#D1B852' and default background color '#9B6140' are repeated as inline fallback literals in multiple components instead of being exported once from a shared constants/theme module."
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "src/components/projects/ProjectSettingsModal.tsx",
+          "line": 64,
+          "detail": "New-project defaults hardcode bgColor: '#9B6140', accentColor: '#D1B852', textColor: '#FFFFFF'."
+        },
+        {
+          "path": "src/components/studio/SlidePreview.tsx",
+          "line": 22,
+          "detail": "accentColor fallback repeats the literal '#D1B852'."
+        },
+        {
+          "path": "src/components/studio/InteractiveSlideCanvas.tsx",
+          "line": 30,
+          "detail": "accentColor fallback repeats the literal '#D1B852'."
+        },
+        {
+          "path": "src/components/canva/CanvaElementPalette.tsx",
+          "line": 33,
+          "detail": "accentColor fallback repeats the literal '#D1B852'."
+        },
+        {
+          "path": "src/components/canva/CanvaToolbar.tsx",
+          "line": 256,
+          "detail": "Swatch fallback repeats the literal '#D1B852'; palette entries at lines 29/38 also hardcode it."
+        },
+        {
+          "path": "src/components/layout/Header.tsx",
+          "line": 146,
+          "detail": "activeProject.bgColor fallback repeats the literal '#9B6140'."
+        }
+      ],
+      "verification": {
+        "status": "not-required",
+        "counterevidence": [],
+        "note": ""
+      }
+    },
+    {
+      "id": "ui-004",
+      "kind": "accessibility-gap",
+      "title": "Core selection controls are non-semantic clickable <div>s with no keyboard path (no role, tabIndex, or onKeyDown)",
+      "severity": "high",
+      "confidence": "high",
+      "identity": {
+        "path": "src/components/settings/SettingsModal.tsx",
+        "assertion": "Primary single-select option lists (CLI agent picker in SettingsModal, slide thumbnail selector, project photo-palette picker) are built from <div onClick=...> with cursor-pointer styling but no role=\"button\"/tabIndex/onKeyDown/onKeyPress, so they cannot be activated from the keyboard and are invisible to assistive tech as controls."
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "src/components/settings/SettingsModal.tsx",
+          "line": 215,
+          "detail": "<div key={agent.id} onClick={() => setLLMConfig({ cliAgent: agent.id })} className=\"...cursor-pointer...\"> — no role/tabIndex/onKeyDown, this is the primary CLI-agent selector."
+        },
+        {
+          "path": "src/components/studio/SlideThumbnails.tsx",
+          "line": 23,
+          "detail": "<div key={slide.id || idx} onClick={() => setActiveSlideIndex(idx)} className=\"...cursor-pointer...\"> — slide selection has no keyboard path."
+        },
+        {
+          "path": "src/components/studio/PhotoPaletteUpload.tsx",
+          "line": 93,
+          "detail": "<div key={idx} onClick={...} className=\"...cursor-pointer...\"> — photo-to-slide assignment has no keyboard path."
+        }
+      ],
+      "verification": {
+        "status": "confirmed",
+        "counterevidence": [],
+        "note": "Independently re-confirmed at current line numbers: SettingsModal.tsx:216-217, SlideThumbnails.tsx:23-25, PhotoPaletteUpload.tsx:92-95 all lack role/tabIndex/onKeyDown. No shared useModal/a11y hook found anywhere in src/ that could be compensating."
+      }
+    },
+    {
+      "id": "ui-005",
+      "kind": "accessibility-gap",
+      "title": "Full-screen modal dialogs have no role=\"dialog\"/aria-modal, no Escape-to-close, and no focus management",
+      "severity": "high",
+      "confidence": "high",
+      "identity": {
+        "path": "src/components/settings/SettingsModal.tsx",
+        "assertion": "SettingsModal, ProjectSettingsModal, and UpdateModal render fixed inset-0 overlay dialogs with none of role=\"dialog\", aria-modal=\"true\", an Escape-key close handler, or an initial-focus/focus-trap effect, so keyboard-only users have no way to close them without a mouse and screen readers do not announce them as dialogs."
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "src/components/settings/SettingsModal.tsx",
+          "line": 134,
+          "detail": "Modal root div has no role=\"dialog\"/aria-modal; file's only useEffect hooks (lines 39, 83) do not add a keydown/Escape listener or manage focus."
+        },
+        {
+          "path": "src/components/projects/ProjectSettingsModal.tsx",
+          "line": 152,
+          "detail": "Modal root div has no role=\"dialog\"/aria-modal; the file's single useEffect (line 46) does not add an Escape handler or manage focus."
+        },
+        {
+          "path": "src/components/updater/UpdateModal.tsx",
+          "line": 16,
+          "detail": "Modal root div has no role=\"dialog\"/aria-modal and the file contains no useEffect at all, so there is no Escape handler or focus management."
+        }
+      ],
+      "verification": {
+        "status": "confirmed",
+        "counterevidence": [],
+        "note": "Independently re-confirmed at exact cited lines (SettingsModal.tsx:134, ProjectSettingsModal.tsx:152, UpdateModal.tsx:16): no role=dialog/aria-modal/Escape handler/focus trap in any of the three. Repo-wide grep for shared a11y infra (useModal/trapFocus/FocusTrap) found nothing. Live screen-reader/keyboard behavior not verifiable statically — recorded as a scope limitation, not a gap in the code-level finding."
+      }
+    },
+    {
+      "id": "ui-006",
+      "kind": "accessibility-gap",
+      "title": "No aria-* attributes anywhere in src/components: icon-only buttons and tab-like button groups have no accessible name or role",
+      "severity": "high",
+      "confidence": "high",
+      "identity": {
+        "path": "src/components/settings/SettingsModal.tsx",
+        "assertion": "A repo-wide search of src/components for 'aria-' returns zero matches; icon-only close buttons (X icon, no text) in at least SettingsModal, UpdateModal, ProjectSettingsModal, ContextualInspector, CanvaToolbar, and StudioLayout have no aria-label, and the tab-style button groups in Header (studio/channels/history) and MultiChannelTabs (telegram/linkedin/threads/instagram) use plain <button> elements with no role=\"tablist\"/role=\"tab\"/aria-selected."
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "src/components/settings/SettingsModal.tsx",
+          "line": 152,
+          "detail": "<button onClick={onClose}><X className=\"w-4 h-4\" /></button> — icon-only close control with no aria-label and no visible text."
+        },
+        {
+          "path": "src/components/updater/UpdateModal.tsx",
+          "line": 31,
+          "detail": "Icon-only close button, no aria-label."
+        },
+        {
+          "path": "src/components/projects/ProjectSettingsModal.tsx",
+          "line": 170,
+          "detail": "Icon-only close button, no aria-label."
+        },
+        {
+          "path": "src/components/studio/ContextualInspector.tsx",
+          "line": 250,
+          "detail": "Icon-only button with no aria-label. Independently verified this button does carry a title=\"...\" tooltip attribute (no aria-label) — most browsers compute this as the accessible name, so impact is milder here than for the three close buttons with neither aria-label nor title."
+        },
+        {
+          "path": "src/components/canva/CanvaToolbar.tsx",
+          "line": 283,
+          "detail": "Icon-only button with no aria-label. Independently verified this button does carry a title=\"...\" tooltip attribute (no aria-label) — most browsers compute this as the accessible name, so impact is milder here than for the three close buttons with neither aria-label nor title."
+        },
+        {
+          "path": "src/components/studio/StudioLayout.tsx",
+          "line": 343,
+          "detail": "Icon-only button with no aria-label (second instance at line 363). Independently verified this button does carry a title=\"...\" tooltip attribute (no aria-label) — most browsers compute this as the accessible name, so impact is milder here than for the three close buttons with neither aria-label nor title."
+        },
+        {
+          "path": "src/components/layout/Header.tsx",
+          "line": 154,
+          "detail": "Studio/Channels/History tab buttons rendered as plain <button> with active-state styling but no role=\"tablist\"/role=\"tab\"/aria-selected."
+        },
+        {
+          "path": "src/components/channels/MultiChannelTabs.tsx",
+          "line": 37,
+          "detail": "Telegram/LinkedIn/Threads/Instagram channel switcher rendered as plain <button> group with no role=\"tablist\"/role=\"tab\"/aria-selected."
+        }
+      ],
+      "verification": {
+        "status": "confirmed",
+        "counterevidence": [],
+        "note": "grep -rn \"aria-\" src/components independently re-run: 0 matches, confirmed. All six icon buttons confirmed to lack aria-label; SettingsModal/UpdateModal/ProjectSettingsModal close buttons have neither aria-label nor title (fully nameless to assistive tech); ContextualInspector/CanvaToolbar/StudioLayout do carry a title= tooltip, which most browsers fall back to as the accessible name -- so those three are less severe than the other three, noted in evidence. Tab groups in Header.tsx and MultiChannelTabs.tsx independently confirmed to use plain <button> with no role/aria-selected."
+      }
+    }
+  ]
+}

@@ -9,16 +9,14 @@ import {
   ArrowRight,
   ShieldCheck,
   Sparkles,
-  Copy,
-  Check,
 } from 'lucide-react';
 import { getClientPlatform, getDownloadUrls, GITHUB_REPO } from '../../lib/runtime';
+import { CopyCommandButton } from '../ui/CopyCommandButton';
 
 export const HeroSection: React.FC = () => {
   const platform = getClientPlatform();
   const downloadUrls = getDownloadUrls();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [copiedMacCmd, setCopiedMacCmd] = useState(false);
 
   const getPrimaryDownload = () => {
     if (platform === 'ipad' || platform === 'ios') {
@@ -194,17 +192,12 @@ export const HeroSection: React.FC = () => {
                     Если macOS блокирует первый запуск: <code className="bg-canvas-3 px-1.5 py-0.5 rounded text-accent font-mono text-[11.5px]">xattr -cr /Applications/Marlex.app</code>
                   </span>
                 </div>
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText('xattr -cr /Applications/Marlex.app');
-                    setCopiedMacCmd(true);
-                    setTimeout(() => setCopiedMacCmd(false), 2000);
-                  }}
+                <CopyCommandButton
+                  command="xattr -cr /Applications/Marlex.app"
+                  iconClassName="w-3 h-3"
+                  idleLabel="Скопировать команду"
                   className="self-start sm:self-auto px-2.5 py-1 rounded bg-canvas-3 hover:bg-line text-[11px] text-zinc-300 hover:text-white shrink-0 font-medium transition-colors cursor-pointer flex items-center gap-1"
-                >
-                  {copiedMacCmd ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                  <span>{copiedMacCmd ? 'Скопировано' : 'Скопировать команду'}</span>
-                </button>
+                />
               </div>
 
               <div className="flex flex-wrap gap-x-6 gap-y-2 text-[13px] text-zinc-400">

@@ -101,12 +101,26 @@ export const PhotoPaletteUpload: React.FC = () => {
                       setSlidePhoto(activeSlideIndex, imgUrl, 90, 'bottom');
                     }
                   }}
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={isSelected}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      if (isSelected) {
+                        setSlidePhoto(activeSlideIndex, null);
+                      } else {
+                        setSlidePhoto(activeSlideIndex, imgUrl, 90, 'bottom');
+                      }
+                    }
+                  }}
                   className={`relative group rounded-xl overflow-hidden h-20 bg-zinc-950 cursor-pointer transition-all border ${
                     isSelected
                       ? 'border-amber-500 ring-2 ring-amber-500 shadow-lg shadow-amber-500/20'
                       : 'border-zinc-800 hover:border-zinc-650 opacity-80 hover:opacity-100'
                   }`}
                   title={isSelected ? 'Применено к текущему слайду (кликните, чтобы снять)' : 'Применить к текущему слайду'}
+                  aria-label={isSelected ? 'Применено к текущему слайду (кликните, чтобы снять)' : 'Применить к текущему слайду'}
                 >
                   <img src={imgUrl} alt={`Asset ${idx}`} className={`w-full h-full object-cover transition-transform duration-200 group-hover:scale-105 ${isSelected ? 'brightness-75' : ''}`} />
 
@@ -130,6 +144,7 @@ export const PhotoPaletteUpload: React.FC = () => {
                     }}
                     className="absolute top-1 right-1 p-1 rounded-md bg-zinc-900/90 hover:bg-red-500 text-zinc-400 hover:text-white opacity-0 group-hover:opacity-100 transition-all shadow cursor-pointer z-10"
                     title="Удалить из галереи"
+                    aria-label="Удалить из галереи"
                   >
                     <Trash2 className="w-3 h-3" />
                   </button>

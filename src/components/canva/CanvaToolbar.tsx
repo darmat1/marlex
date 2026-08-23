@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { CanvasElement } from '../../types';
 import { useMarlexStore } from '../../lib/store/useMarlexStore';
+import { DEFAULT_ACCENT_COLOR } from '../../lib/constants';
 
 interface CanvaToolbarProps {
   selectedElement: CanvasElement | null;
@@ -26,7 +27,7 @@ interface CanvaToolbarProps {
 
 const COLOR_SWATCHES = [
   { name: 'Белый', value: '#FFFFFF' },
-  { name: 'Золото', value: '#D1B852' },
+  { name: 'Золото', value: DEFAULT_ACCENT_COLOR },
   { name: 'Янтарь', value: '#F59E0B' },
   { name: 'Светло-серый', value: '#E4E4E7' },
   { name: 'Черный', value: '#09090B' },
@@ -35,7 +36,7 @@ const COLOR_SWATCHES = [
 const BG_SWATCHES = [
   { name: 'Без фона', value: 'transparent' },
   { name: 'Темное стекло', value: 'rgba(0, 0, 0, 0.65)' },
-  { name: 'Золотая плашка', value: '#D1B852' },
+  { name: 'Золотая плашка', value: DEFAULT_ACCENT_COLOR },
   { name: 'Светлая плашка', value: 'rgba(255, 255, 255, 0.12)' },
 ];
 
@@ -79,6 +80,7 @@ export const CanvaToolbar: React.FC<CanvaToolbarProps> = ({
                 onClick={() => onUpdateElement({ fontSize: Math.max(16, (selectedElement.fontSize || 40) - 4) })}
                 className="px-2 py-1 hover:bg-zinc-800 text-zinc-300 font-bold cursor-pointer"
                 title="Уменьшить шрифт"
+                aria-label="Уменьшить шрифт"
               >
                 -
               </button>
@@ -151,6 +153,7 @@ export const CanvaToolbar: React.FC<CanvaToolbarProps> = ({
                         className="w-6 h-6 rounded-full border border-zinc-700 hover:scale-110 transition-transform cursor-pointer shadow-sm"
                         style={{ backgroundColor: swatch.value }}
                         title={swatch.name}
+                aria-label={swatch.name}
                       />
                     ))}
                   </div>
@@ -173,6 +176,7 @@ export const CanvaToolbar: React.FC<CanvaToolbarProps> = ({
                 onClick={() => setIsBgMenuOpen(!isBgMenuOpen)}
                 className="flex items-center gap-1 px-2 py-1 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-300 hover:text-white cursor-pointer"
                 title="Фоновая плашка"
+                aria-label="Фоновая плашка"
               >
                 <Square className="w-3 h-3 text-amber-400" />
                 <span className="text-[11px]">
@@ -233,6 +237,7 @@ export const CanvaToolbar: React.FC<CanvaToolbarProps> = ({
                 onClick={() => onUpdateElement({ textAlign: 'center' })}
                 className={`p-1 rounded cursor-pointer ${selectedElement.textAlign === 'center' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
                 title="По центру"
+                aria-label="По центру"
               >
                 <AlignCenter className="w-3.5 h-3.5" />
               </button>
@@ -253,7 +258,7 @@ export const CanvaToolbar: React.FC<CanvaToolbarProps> = ({
             <span className="text-[11px] text-zinc-400">Цвет заливки:</span>
             <input
               type="color"
-              value={selectedElement.bgColor?.startsWith('#') ? selectedElement.bgColor : '#D1B852'}
+              value={selectedElement.bgColor?.startsWith('#') ? selectedElement.bgColor : DEFAULT_ACCENT_COLOR}
               onChange={(e) => onUpdateElement({ bgColor: e.target.value })}
               className="w-6 h-6 rounded cursor-pointer bg-transparent border-0"
             />
@@ -284,6 +289,7 @@ export const CanvaToolbar: React.FC<CanvaToolbarProps> = ({
           onClick={onDuplicateElement}
           className="p-1.5 rounded-lg bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer"
           title="Дублировать элемент"
+                aria-label="Дублировать элемент"
         >
           <Copy className="w-3.5 h-3.5" />
         </button>
@@ -291,6 +297,7 @@ export const CanvaToolbar: React.FC<CanvaToolbarProps> = ({
           onClick={onDeleteElement}
           className="p-1.5 rounded-lg bg-zinc-950 hover:bg-red-500/20 border border-zinc-800 text-zinc-400 hover:text-red-400 transition-colors cursor-pointer"
           title="Удалить элемент"
+                aria-label="Удалить элемент"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>

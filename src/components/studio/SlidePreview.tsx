@@ -1,5 +1,6 @@
 import React from 'react';
 import { SlideItem, ClientProfile } from '../../types';
+import { DEFAULT_ACCENT_COLOR } from '../../lib/constants';
 
 interface SlidePreviewProps {
   slide: SlideItem;
@@ -19,7 +20,7 @@ export const SlidePreview: React.FC<SlidePreviewProps> = ({
   const isCover = slide.type === 'cover';
   const activePhoto = slide.photoUrl !== undefined ? slide.photoUrl : (isCover ? bgPhotoUrl : null);
   const bgColor = slide.slideBgColor || profile.defaultBgColor || '#1c1917';
-  const accentColor = slide.slideAccentColor || profile.defaultAccentColor || '#D1B852';
+  const accentColor = slide.slideAccentColor || profile.defaultAccentColor || DEFAULT_ACCENT_COLOR;
   const textColor = profile.defaultTextColor || '#FFFFFF';
 
   const renderTextWithAccents = (text: string) => {

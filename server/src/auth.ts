@@ -9,9 +9,27 @@ const getBaseUrl = () => {
   return 'http://localhost:3001';
 };
 
+const authSecret = process.env.BETTER_AUTH_SECRET;
+if (!authSecret) {
+  throw new Error(
+    'BETTER_AUTH_SECRET is not set. Refusing to start with an insecure default — set it in .env (local) or the deployment environment.'
+  );
+}
+
+export const trustedOrigins = [
+  'http://localhost:5174',
+  'http://127.0.0.1:5174',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'https://marlex.vercel.app',
+  'http://localhost:3001',
+  'http://127.0.0.1:3001',
+  'app://marlex',
+];
+
 export const auth = betterAuth({
   baseURL: getBaseUrl(),
-  secret: process.env.BETTER_AUTH_SECRET || 'marlex-content-engine-super-secret-key-2026',
+  secret: authSecret,
   database: drizzleAdapter(db, {
     provider: 'pg',
     schema: {
@@ -25,15 +43,10 @@ export const auth = betterAuth({
     enabled: true,
     autoSignIn: true,
   },
-  trustedOrigins: [
-    'http://localhost:5174',
-    'http://127.0.0.1:5174',
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
-    'https://marlex.vercel.app',
-    'http://localhost:3001',
-    'http://127.0.0.1:3001',
-    'app://marlex',
-    'null',
-  ],
+  trustedOrigins,
+  // Cross-origin cookies (Electron app:// / Vercel-hosted PWA) need SameSite=None,
+  // which requires Secure — only safe over the HTTPS production deployment, not local http dev.
+  ...(process.env.VERCEL
+    ? { advanced: { defaultCookieAttributes: { sameSite: 'none' as const, secure: true } } }
+    : {}),
 });

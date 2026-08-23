@@ -1,0 +1,298 @@
+{
+  "schema_version": 2,
+  "run_id": "audit-20260823T005819Z-eb01",
+  "auditor": "security",
+  "scanned_at": "2026-08-22T22:03:57Z",
+  "scope": {
+    "included": [
+      "server/src/auth.ts",
+      "server/src/index.ts",
+      "server/src/db/index.ts",
+      "server/src/db/schema.ts",
+      "api/index.ts",
+      "electron/main.ts",
+      "electron/preload.ts",
+      "src/lib/ai/llm-client.ts",
+      "src/lib/store/useMarlexStore.ts",
+      "src/lib/auth-client.ts",
+      "src/main.tsx",
+      ".github/workflows/release.yml",
+      "vercel.json",
+      "package.json",
+      "package-lock.json",
+      "drizzle.config.ts",
+      ".npmrc",
+      ".env",
+      ".env.example",
+      ".gitignore",
+      ".jcodemunch.jsonc",
+      "README.md",
+      "AGENTS.md",
+      "GEMINI.md",
+      "scratch/test-headers.js"
+    ],
+    "excluded": [
+      "node_modules",
+      "dist",
+      "dist-electron",
+      "build",
+      "resources",
+      "public"
+    ],
+    "unscanned": [],
+    "limitations": [
+      ".npmrc was flagged by the indexer as containing a secret and excluded from indexing; direct inspection by this auditor found it contains only 'legacy-peer-deps=true' with no credential present - treated as an indexer false positive, not reported as a finding.",
+      ".env is gitignored and confirmed untracked in git (git ls-files shows no entry); its DATABASE_URL/BETTER_AUTH_SECRET/BETTER_AUTH_URL/VITE_API_URL values were not printed per instructions and, since the file is not committed to the repository, no secret-exposure finding was raised for it. git history was also checked and .env has never been added to a commit.",
+      "No approved advisory source or network access was available for this run, so pinned dependency versions in package.json/package-lock.json were not checked against a CVE/advisory database; dependency-risk coverage is limited to structural/config observations (e.g. CI action pinning) rather than known-CVE matching.",
+      "Package manager execution (npm install/audit) was not run, per read-only constraints.",
+      "No text anywhere in the repository was found addressing an AI agent to alter this audit's scope, trust, tools, disclosure, or verdict; no agent-directed-text finding was raised this run."
+    ]
+  },
+  "findings": [
+    {
+      "id": "security-001",
+      "kind": "secret-exposure",
+      "title": "Hardcoded fallback auth secret used to sign sessions when BETTER_AUTH_SECRET is unset",
+      "severity": "high",
+      "confidence": "high",
+      "identity": {
+        "path": "server/src/auth.ts",
+        "assertion": "betterAuth() secret falls back to a hardcoded literal string when BETTER_AUTH_SECRET env var is not set, duplicated in api/index.ts",
+        "symbol": "secret"
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "server/src/auth.ts",
+          "line": 14,
+          "detail": "betterAuth({ secret: process.env.BETTER_AUTH_SECRET || '<hardcoded literal>' }) - fallback secret is a fixed string committed to source control, used to sign/verify session tokens and cookies."
+        },
+        {
+          "path": "api/index.ts",
+          "line": 97,
+          "detail": "Identical hardcoded fallback secret duplicated in the Vercel serverless auth instance."
+        }
+      ],
+      "verification": {
+        "status": "confirmed",
+        "counterevidence": [],
+        "note": "Independently confirmed identical hardcoded fallback string in both server/src/auth.ts:14 and api/index.ts:97. .env.example does not declare BETTER_AUTH_SECRET, so nothing in the repo's own scaffolding forces an operator to set it. Whether the live Vercel deployment actually has the env var set cannot be verified from repo contents alone -- recorded as an explicit limitation, not resolved either way."
+      }
+    },
+    {
+      "id": "security-002",
+      "kind": "insecure-cors-policy",
+      "title": "CORS reflects any request Origin while allowing credentials, on both backend entry points",
+      "severity": "high",
+      "confidence": "high",
+      "identity": {
+        "path": "api/index.ts",
+        "assertion": "Backend CORS handling reflects the incoming Origin header verbatim as Access-Control-Allow-Origin while also setting Access-Control-Allow-Credentials: true, effectively allowing any origin to make credentialed requests",
+        "symbol": "setCors"
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "server/src/index.ts",
+          "line": 15,
+          "detail": "Hono cors() configured with origin: (origin) => origin || '*' and credentials: true, exposeHeaders including Set-Cookie - reflects whatever Origin header the caller sends."
+        },
+        {
+          "path": "api/index.ts",
+          "line": 139,
+          "detail": "setCors() sets Access-Control-Allow-Origin to req.headers.origin (falling back to '*') and Access-Control-Allow-Credentials: 'true' unconditionally, with no allowlist check."
+        },
+        {
+          "path": "api/index.ts",
+          "line": 143,
+          "detail": "Access-Control-Allow-Credentials: 'true' set alongside the reflected-origin header, the classic CORS+credentials misconfiguration that lets any web origin read authenticated responses via a victim's browser."
+        }
+      ],
+      "verification": {
+        "status": "confirmed",
+        "counterevidence": [],
+        "note": "Independently confirmed in both server/src/index.ts:14-19 (Hono cors(), origin: (origin) => origin || '*', credentials: true) and api/index.ts:138-144 (setCors(), reflects req.headers.origin, Access-Control-Allow-Credentials: 'true' unconditionally). No allowlist check found in either. No vercel.json headers block overrides this."
+      }
+    },
+    {
+      "id": "security-003",
+      "kind": "authz-gap",
+      "title": "better-auth trustedOrigins allowlist includes a literal '*' wildcard entry on the Vercel entry point, neutralizing origin-based CSRF protection",
+      "severity": "high",
+      "confidence": "high",
+      "identity": {
+        "path": "api/index.ts",
+        "assertion": "api/index.ts's betterAuth trustedOrigins array includes the literal '*' entry, which the installed better-auth version (1.7.1) compiles to a true any-host wildcard pattern via wildcardMatch, defeating origin-based CSRF protection for that deployment. (The array's 'null' entry, also present in api/index.ts and server/src/auth.ts, was independently checked and found to be inert in this library version: better-auth's origin-check middleware explicitly rejects an Origin header equal to the literal string 'null' before the trustedOrigins list is even consulted, so it does not provide an actual bypass here.)",
+        "symbol": "trustedOrigins"
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "api/index.ts",
+          "line": 117,
+          "detail": "trustedOrigins array contains a literal '*' entry alongside specific hostnames."
+        }
+      ],
+      "verification": {
+        "status": "confirmed",
+        "counterevidence": [],
+        "note": "Independent verifier confirmed the '*' wildcard sub-claim is real (better-auth's own wildcard-matching source treats it as any-host) but refuted the 'null' sub-claim (better-auth's origin-check middleware rejects Origin: null before trustedOrigins is even read, in the installed 1.7.1 version -- package.json's ^1.1.20 range permits drift from this exact behavior at deploy time, which could not be verified). Title/identity/evidence corrected to state only the confirmed '*' wildcard bypass; severity kept at high since that alone defeats origin-based CSRF protection on api/index.ts."
+      }
+    },
+    {
+      "id": "security-004",
+      "kind": "authz-gap",
+      "title": "GET/POST /api/projects have no authentication or ownership check, exposing all users' project data (IDOR)",
+      "severity": "high",
+      "confidence": "medium",
+      "identity": {
+        "path": "server/src/index.ts",
+        "assertion": "The /api/projects GET and POST handlers in the standalone Hono server perform no session/auth check and do not filter or scope by the projects.userId column defined in the schema",
+        "symbol": "app.get('/api/projects')"
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "server/src/index.ts",
+          "line": 34,
+          "detail": "GET /api/projects runs `db.select().from(projects)` with no session lookup and no WHERE clause - returns every project row for every user to any caller."
+        },
+        {
+          "path": "server/src/index.ts",
+          "line": 44,
+          "detail": "POST /api/projects accepts an arbitrary body and inserts a project with no session lookup, no userId assignment from an authenticated session, and no ownership check."
+        },
+        {
+          "path": "server/src/db/schema.ts",
+          "line": 72,
+          "detail": "projects table defines a userId column (references user.id) that these handlers never read or set, confirming ownership scoping was intended but not implemented on this route."
+        }
+      ],
+      "verification": {
+        "status": "confirmed",
+        "counterevidence": [],
+        "note": "Independently verified: server/src/index.ts (the only file implementing /api/projects) is gated by `if (!process.env.VERCEL)` and started only via `npm run server:dev`; the deployed Vercel production entry (api/index.ts, sole target of vercel.json's /api/(.*) rewrite) does not implement /api/projects at all. No importer, CI step, or deploy config runs server/src/index.ts anywhere besides local development. The code-level vulnerability (no session check, no userId scoping) is confirmed as written; it is not reachable on the public production deployment today."
+      }
+    },
+    {
+      "id": "security-005",
+      "kind": "sensitive-data-in-output",
+      "title": "Unhandled errors return raw error message and stack trace to the HTTP client",
+      "severity": "medium",
+      "confidence": "high",
+      "identity": {
+        "path": "api/index.ts",
+        "assertion": "The top-level request handler's catch block serializes err.message and err.stack directly into the JSON error response body sent to the client",
+        "symbol": "handler"
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "api/index.ts",
+          "line": 232,
+          "detail": "catch (err: any) { ... res.end(JSON.stringify({ error: err.message, stack: err.stack })) } - full stack trace (file paths, internal call structure) returned in the HTTP response body on any unhandled error."
+        }
+      ],
+      "verification": {
+        "status": "not-required",
+        "counterevidence": [],
+        "note": ""
+      }
+    },
+    {
+      "id": "security-006",
+      "kind": "sensitive-data-in-output",
+      "title": "BYOK provider API keys (OpenAI/Anthropic/Gemini) are persisted unencrypted to localStorage",
+      "severity": "medium",
+      "confidence": "high",
+      "identity": {
+        "path": "src/lib/store/useMarlexStore.ts",
+        "assertion": "The zustand persist() wrapper around the whole app store has no partialize/storage option, so llmConfig.openaiKey/anthropicKey/geminiKey are written to localStorage in plaintext under key marlex-content-storage-v5",
+        "symbol": "useMarlexStore"
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "src/lib/store/useMarlexStore.ts",
+          "line": 312,
+          "detail": "llmConfig default state includes openaiKey, anthropicKey, geminiKey as plain string fields on the persisted store."
+        },
+        {
+          "path": "src/lib/store/useMarlexStore.ts",
+          "line": 518,
+          "detail": "persist(..., { name: 'marlex-content-storage-v5' }) has no partialize function, so the entire state tree including the provider API keys is serialized to localStorage (or Electron's equivalent on-disk storage) unencrypted."
+        },
+        {
+          "path": "src/lib/ai/llm-client.ts",
+          "line": 397,
+          "detail": "config.geminiKey is read from this store and used directly for outbound API calls, confirming the field holds a live BYOK credential rather than a placeholder."
+        }
+      ],
+      "verification": {
+        "status": "not-required",
+        "counterevidence": [],
+        "note": ""
+      }
+    },
+    {
+      "id": "security-007",
+      "kind": "unsafe-defaults",
+      "title": "Electron BrowserWindow disables webSecurity unconditionally",
+      "severity": "medium",
+      "confidence": "high",
+      "identity": {
+        "path": "electron/main.ts",
+        "assertion": "The main BrowserWindow is created with webPreferences.webSecurity: false unconditionally (not gated to development), disabling same-origin policy and mixed-content enforcement for all content the window loads",
+        "symbol": "createWindow"
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "electron/main.ts",
+          "line": 114,
+          "detail": "webPreferences: { preload: ..., nodeIntegration: false, contextIsolation: true, webSecurity: false } - nodeIntegration/contextIsolation are configured correctly, but webSecurity: false removes same-origin/CORS/mixed-content protections in the renderer regardless of build (dev or packaged)."
+        }
+      ],
+      "verification": {
+        "status": "not-required",
+        "counterevidence": [],
+        "note": ""
+      }
+    },
+    {
+      "id": "security-008",
+      "kind": "supply-chain-risk",
+      "title": "Release workflow pins third-party GitHub Actions by mutable major-version tag rather than commit SHA",
+      "severity": "low",
+      "confidence": "medium",
+      "identity": {
+        "path": ".github/workflows/release.yml",
+        "assertion": "actions/checkout and actions/setup-node are referenced by mutable tag (@v4) rather than a pinned commit SHA in the release workflow that has contents: write permission and runs npm install",
+        "symbol": "release job steps"
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": ".github/workflows/release.yml",
+          "line": 31,
+          "detail": "uses: actions/checkout@v4 - mutable tag, not a pinned commit SHA."
+        },
+        {
+          "path": ".github/workflows/release.yml",
+          "line": 34,
+          "detail": "uses: actions/setup-node@v4 - mutable tag, not a pinned commit SHA."
+        },
+        {
+          "path": ".github/workflows/release.yml",
+          "line": 14,
+          "detail": "Workflow-level permissions: contents: write combined with an unpinned npm install (line 39) and electron-builder publish step increases the impact if an action tag were ever repointed."
+        }
+      ],
+      "verification": {
+        "status": "not-required",
+        "counterevidence": [],
+        "note": ""
+      }
+    }
+  ]
+}

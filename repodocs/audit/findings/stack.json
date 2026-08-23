@@ -1,0 +1,254 @@
+{
+  "schema_version": 2,
+  "run_id": "audit-20260823T005819Z-eb01",
+  "auditor": "stack",
+  "scanned_at": "2026-08-22T22:02:08Z",
+  "scope": {
+    "included": [
+      "package.json",
+      "package-lock.json",
+      "tsconfig.json",
+      "tsconfig.node.json",
+      "electron/tsconfig.json",
+      "server/tsconfig.json",
+      "vite.config.ts",
+      "drizzle.config.ts",
+      "vercel.json",
+      ".github/workflows/release.yml",
+      ".npmrc",
+      "api/index.ts",
+      "server/src/index.ts",
+      "server/src/auth.ts",
+      "server/src/db/index.ts",
+      "server/src/db/schema.ts",
+      "electron/main.ts",
+      "electron/preload.ts",
+      "src",
+      "scripts"
+    ],
+    "excluded": [
+      "node_modules",
+      "dist",
+      "dist-electron"
+    ],
+    "unscanned": [
+      ".env"
+    ],
+    "limitations": [
+      "No network access permitted, so declared dependency versions could not be checked against currently-published npm release lines; only internal consistency (lockfile, manifests, actual imports) was verified.",
+      ".npmrc was flagged as a secret file during indexing; its purpose (legacy-peer-deps) was confirmed without quoting its full contents.",
+      "jCodeMunch search_text reported one uncommitted change (src/components/landing/FAQSection.tsx) inside scanned scope not yet reflected in the index at query time; that file is unrelated to stack findings but index-derived absence results for it would be unreliable.",
+      "Package-manager commands (npm install/ls, tsc --noEmit) were not run per read-only rules, so unused/undeclared dependency claims rely on grep plus jCodeMunch search_text corroboration and direct source reading, not a resolver or type-checker."
+    ]
+  },
+  "findings": [
+    {
+      "id": "stack-001",
+      "kind": "conflicting-tooling",
+      "title": "Two independently-maintained backend entrypoints (api/index.ts vs server/src) duplicate auth+DB wiring and have already drifted",
+      "severity": "high",
+      "confidence": "high",
+      "identity": {
+        "path": "api/index.ts",
+        "assertion": "api/index.ts hand-rolls its own Node http handler, better-auth instance, and a copy of the Drizzle schema, duplicating server/src/index.ts (a Hono app) plus server/src/auth.ts and server/src/db/schema.ts; the two schema copies have already diverged.",
+        "symbol": "handler"
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "vercel.json",
+          "detail": "rewrites route all /api/(.*) traffic to /api, i.e. to api/index.ts — this is the only backend Vercel production deployments execute.",
+          "line": 5
+        },
+        {
+          "path": "api/index.ts",
+          "detail": "Defines its own pgTable('user'/'session'/'account'/'verification'/'projects', ...) and its own betterAuth(...) instance inline, instead of importing server/src/db/schema.ts or server/src/auth.ts.",
+          "line": 10
+        },
+        {
+          "path": "server/src/db/schema.ts",
+          "detail": "The canonical schema (referenced by drizzle.config.ts) defines a clientProfiles table and a projects.clientProfileId column that api/index.ts's inline copy of the projects table omits entirely.",
+          "line": 56
+        },
+        {
+          "path": "api/index.ts",
+          "detail": "Only implements /api/health and /api/auth/** — the /api/projects GET/POST routes that exist in server/src/index.ts are absent from the Vercel-deployed handler.",
+          "line": 195
+        },
+        {
+          "path": "server/src/index.ts",
+          "detail": "Hono app defines app.get('/api/projects', ...) and app.post('/api/projects', ...) against the canonical schema; only reachable via `npm run server:dev` (tsx), not via the Vercel deployment path.",
+          "line": 34
+        },
+        {
+          "path": "drizzle.config.ts",
+          "detail": "drizzle-kit schema/migrations are generated from ./server/src/db/schema.ts only, so any drizzle migration will not reflect the separate copy embedded in api/index.ts.",
+          "line": 6
+        }
+      ],
+      "verification": {
+        "status": "confirmed",
+        "counterevidence": [],
+        "note": "Same independent verification as architecture-001 (shared underlying fact): api/index.ts is the sole Vercel production entry, does not implement /api/projects, and server/src/index.ts never runs in that deployment."
+      }
+    },
+    {
+      "id": "stack-002",
+      "kind": "unused-dependency",
+      "title": "Three AI provider SDKs are declared dependencies but the app calls those providers via raw fetch instead",
+      "severity": "medium",
+      "confidence": "high",
+      "identity": {
+        "path": "package.json",
+        "assertion": "@anthropic-ai/sdk, @google/generative-ai, and openai are listed in dependencies, but no source file imports any of them; src/lib/ai/llm-client.ts talks to all three providers with hand-written fetch() calls to their REST endpoints.",
+        "symbol": "dependencies"
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "package.json",
+          "detail": "dependencies include \"@anthropic-ai/sdk\": \"^0.36.3\", \"@google/generative-ai\": \"^0.24.0\", \"openai\": \"^4.85.4\".",
+          "line": 15
+        },
+        {
+          "path": "src/lib/ai/llm-client.ts",
+          "detail": "OpenAI path uses fetch('https://api.openai.com/v1/chat/completions', ...) directly.",
+          "line": 347
+        },
+        {
+          "path": "src/lib/ai/llm-client.ts",
+          "detail": "Anthropic path uses fetch('https://api.anthropic.com/v1/messages', ...) directly instead of the @anthropic-ai/sdk client.",
+          "line": 372
+        },
+        {
+          "path": "src/lib/ai/llm-client.ts",
+          "detail": "Gemini path uses fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent...`) directly instead of @google/generative-ai.",
+          "line": 399
+        }
+      ],
+      "verification": {
+        "status": "not-required",
+        "counterevidence": [],
+        "note": ""
+      }
+    },
+    {
+      "id": "stack-003",
+      "kind": "unused-dependency",
+      "title": "better-sqlite3 and its @types package are declared devDependencies but the app's only database driver is postgres/drizzle-orm/postgres-js",
+      "severity": "low",
+      "confidence": "high",
+      "identity": {
+        "path": "package.json",
+        "assertion": "devDependencies list better-sqlite3 and @types/better-sqlite3, but no file in server/, api/, electron/, or scripts/ imports better-sqlite3; the only Drizzle driver in use is drizzle-orm/postgres-js.",
+        "symbol": "devDependencies"
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "package.json",
+          "detail": "devDependencies include \"@types/better-sqlite3\": \"^7.6.12\" and \"better-sqlite3\": \"^12.0.0\".",
+          "line": 37
+        },
+        {
+          "path": "server/src/db/index.ts",
+          "detail": "Database client is `postgres(connectionString, ...)` from the `postgres` package, wired into `drizzle(client, { schema })` from drizzle-orm/postgres-js — no sqlite driver is instantiated anywhere.",
+          "line": 1
+        }
+      ],
+      "verification": {
+        "status": "not-required",
+        "counterevidence": [],
+        "note": ""
+      }
+    },
+    {
+      "id": "stack-004",
+      "kind": "unused-dependency",
+      "title": "colorthief dependency is declared but never imported; palette extraction is implemented independently",
+      "severity": "low",
+      "confidence": "medium",
+      "identity": {
+        "path": "package.json",
+        "assertion": "\"colorthief\": \"^2.6.0\" is a declared dependency with zero import sites in source; src/lib/palette/color-extractor.ts (the module whose name suggests it would use it) has no imports at all.",
+        "symbol": "dependencies"
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "package.json",
+          "detail": "\"colorthief\": \"^2.6.0\" listed in dependencies.",
+          "line": 20
+        },
+        {
+          "path": "src/lib/palette/color-extractor.ts",
+          "detail": "File implements its own color-extraction logic with no import statements referencing colorthief or any other palette library.",
+          "line": 1
+        }
+      ],
+      "verification": {
+        "status": "not-required",
+        "counterevidence": [],
+        "note": "grep across src/electron/scripts and a jCodeMunch search_text pass over the indexed repo both found colorthief only in package.json, agreeing across two differently-shaped queries plus a direct read of the one plausible consumer file."
+      }
+    },
+    {
+      "id": "stack-005",
+      "kind": "conflicting-tooling",
+      "title": "Vercel's buildCommand skips the TypeScript typecheck and icon-generation steps that the project's own npm build script performs",
+      "severity": "medium",
+      "confidence": "high",
+      "identity": {
+        "path": "vercel.json",
+        "assertion": "vercel.json's buildCommand is the bare \"vite build\", while package.json's \"build\" script is \"node scripts/generate-icons.js && tsc && vite build\" — Vercel deploys skip the tsc typecheck gate and the sharp-based icon regeneration that local/CI builds run.",
+        "symbol": "buildCommand"
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "vercel.json",
+          "detail": "\"buildCommand\": \"vite build\", \"framework\": \"vite\" — no tsc step, no scripts/generate-icons.js step.",
+          "line": 2
+        },
+        {
+          "path": "package.json",
+          "detail": "\"build\": \"node scripts/generate-icons.js && tsc && vite build\" is the script actually documented for local/manual builds.",
+          "line": 8
+        }
+      ],
+      "verification": {
+        "status": "not-required",
+        "counterevidence": [],
+        "note": ""
+      }
+    },
+    {
+      "id": "stack-006",
+      "kind": "conflicting-tooling",
+      "title": ".npmrc forces legacy-peer-deps, indicating unresolved peer-dependency conflicts among declared packages",
+      "severity": "low",
+      "confidence": "low",
+      "identity": {
+        "path": ".npmrc",
+        "assertion": ".npmrc sets legacy-peer-deps=true, which suppresses npm's peer-dependency resolution errors; this is typically needed when some declared dependency's peerDependencies range doesn't accept the installed major versions (e.g. React 19) actually in use."
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": ".npmrc",
+          "detail": "File sets the legacy-peer-deps npm config flag (contents not quoted per secret-file handling instructions)."
+        },
+        {
+          "path": "package.json",
+          "detail": "react/react-dom are pinned to ^19.0.0, a recent major version that some older-generation peerDependencies ranges in the dependency tree may not yet declare support for.",
+          "line": 25
+        }
+      ],
+      "verification": {
+        "status": "not-required",
+        "counterevidence": [],
+        "note": "No network/registry access was available to enumerate exactly which package's peerDependencies range triggers the conflict, so this is reported at low confidence as a signal rather than a pinpointed incompatibility."
+      }
+    }
+  ]
+}

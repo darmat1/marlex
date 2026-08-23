@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { CanvasElement, ShapeType } from '../../types';
 import { useMarlexStore } from '../../lib/store/useMarlexStore';
+import { DEFAULT_ACCENT_COLOR } from '../../lib/constants';
 
 interface CanvaElementPaletteProps {
   onAddElement: (element: CanvasElement) => void;
@@ -30,7 +31,7 @@ export const CanvaElementPalette: React.FC<CanvaElementPaletteProps> = ({ onAddE
   const [activeCategory, setActiveCategory] = useState<ElementCategory>('text');
   const { activeProfile, activeProject } = useMarlexStore();
 
-  const accentColor = activeProject.accentColor || '#D1B852';
+  const accentColor = activeProject.accentColor || DEFAULT_ACCENT_COLOR;
 
   // 1. Text Elements
   const addHeading = () => {

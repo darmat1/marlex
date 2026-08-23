@@ -4,85 +4,13 @@ import { spawn } from 'child_process';
 import os from 'os';
 import fs from 'fs';
 
-function compareSemver(v1: string, v2: string): number {
-  const p1 = v1.replace(/^v/, '').split('.').map(n => parseInt(n, 10) || 0);
-  const p2 = v2.replace(/^v/, '').split('.').map(n => parseInt(n, 10) || 0);
-  for (let i = 0; i < Math.max(p1.length, p2.length); i++) {
-    const num1 = p1[i] || 0;
-    const num2 = p2[i] || 0;
-    if (num1 > num2) return 1;
-    if (num1 < num2) return -1;
-  }
-  return 0;
-}
+import { compareSemver } from './semver';
 
 let mainWindow: BrowserWindow | null = null;
 const isWin = process.platform === 'win32';
 const isMac = process.platform === 'darwin';
 
-// Extended PATH resolution for macOS, Windows & Linux
-function getSearchPaths(): string[] {
-  if (isWin) {
-    return [
-      process.env.LOCALAPPDATA ? path.join(process.env.LOCALAPPDATA, 'Programs') : '',
-      process.env.APPDATA ? path.join(process.env.APPDATA, 'npm') : '',
-      process.env.USERPROFILE ? path.join(process.env.USERPROFILE, '.local', 'bin') : '',
-      process.env.USERPROFILE ? path.join(process.env.USERPROFILE, '.cargo', 'bin') : '',
-      process.env.ProgramFiles || 'C:\\Program Files',
-      process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)',
-      ...(process.env.PATH || '').split(';'),
-    ].filter(Boolean);
-  } else {
-    return [
-      path.join(os.homedir(), '.local/bin'),
-      path.join(os.homedir(), '.cargo/bin'),
-      path.join(os.homedir(), '.nvm/versions/node/current/bin'),
-      '/opt/homebrew/bin',
-      '/usr/local/bin',
-      '/usr/bin',
-      '/bin',
-      ...(process.env.PATH || '').split(':'),
-    ].filter(Boolean);
-  }
-}
-
-function findBinary(name: string): string | null {
-  const paths = getSearchPaths();
-  const extensions = isWin ? ['.exe', '.cmd', '.bat', ''] : [''];
-
-  for (const base of paths) {
-    for (const ext of extensions) {
-      const full = path.join(base, `${name}${ext}`);
-      try {
-        if (fs.existsSync(full)) return full;
-      } catch {}
-
-      if (isWin) {
-        const subfolder = path.join(base, name, `${name}${ext}`);
-        try {
-          if (fs.existsSync(subfolder)) return subfolder;
-        } catch {}
-      }
-    }
-  }
-  return null;
-}
-
-function hasApp(appName: string): boolean {
-  if (isMac) {
-    return (
-      fs.existsSync(`/Applications/${appName}.app`) ||
-      fs.existsSync(path.join(os.homedir(), `Applications/${appName}.app`))
-    );
-  }
-  if (isWin) {
-    const localApp = process.env.LOCALAPPDATA ? path.join(process.env.LOCALAPPDATA, 'Programs', appName, `${appName}.exe`) : '';
-    const progFiles = process.env.ProgramFiles ? path.join(process.env.ProgramFiles, appName, `${appName}.exe`) : '';
-    const progFiles86 = process.env['ProgramFiles(x86)'] ? path.join(process.env['ProgramFiles(x86)'], appName, `${appName}.exe`) : '';
-    return (localApp && fs.existsSync(localApp)) || (progFiles && fs.existsSync(progFiles)) || (progFiles86 && fs.existsSync(progFiles86)) || !!findBinary(appName.toLowerCase());
-  }
-  return !!findBinary(appName.toLowerCase());
-}
+import { getSearchPaths, findBinary, hasApp } from './cli-discovery';
 
 function createWindow() {
   let iconPath = path.join(__dirname, '../public/icon.png');
@@ -111,7 +39,6 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
-      webSecurity: false,
     },
   });
 

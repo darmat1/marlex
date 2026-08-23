@@ -1,0 +1,247 @@
+{
+  "schema_version": 2,
+  "run_id": "audit-20260823T005819Z-eb01",
+  "auditor": "bloat",
+  "scanned_at": "2026-08-23T00:58:19Z",
+  "scope": {
+    "included": [
+      "src",
+      "scripts",
+      "package.json"
+    ],
+    "excluded": [
+      "node_modules",
+      "dist",
+      "dist-electron",
+      "build",
+      "dist-release",
+      ".agents"
+    ],
+    "unscanned": [
+      "server",
+      "electron",
+      "api",
+      "docs",
+      "public",
+      "resources"
+    ],
+    "limitations": [
+      "jCodeMunch get_dead_code_v2 reported that 2 of its 3 signals (not_barrel_exported, unreachable_file) do not discriminate on this repository (fire on >90% or <9% of symbols), capping reachable confidence at 0.33; a sample of the returned 0.33-confidence 'no_callers' candidates in CanvaElementPalette.tsx were manually confirmed to be live JSX onClick handlers, so the sweep's output was treated only as a lead and not cited as evidence.",
+      "server/, electron/, api/, and docs/ were not inspected in this pass; findings are scoped to src/ (application/UI code) and scripts/ (build tooling) plus package.json dependency lists.",
+      "jCodeMunch find_dead_code / check_delete_safe were not run per-symbol beyond the sample check above because the get_dead_code_v2 sweep itself was already disqualified by its own signal_warning; no removal claim in this report relies on index tooling alone."
+    ]
+  },
+  "findings": [
+    {
+      "id": "bloat-001",
+      "kind": "reinvented-library-feature",
+      "title": "llm-client.ts hand-rolls raw fetch calls to OpenAI/Anthropic/Gemini instead of using the installed SDKs",
+      "severity": "medium",
+      "confidence": "high",
+      "identity": {
+        "path": "src/lib/ai/llm-client.ts",
+        "symbol": "generateContentPackage",
+        "assertion": "generateContentPackage builds raw fetch() requests/response parsing for all three BYOK providers (OpenAI, Anthropic, Gemini) by hand, duplicating request-shape and error-handling logic per provider, while @anthropic-ai/sdk, openai, and @google/generative-ai are declared dependencies and are never imported anywhere in the tracked source tree."
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "src/lib/ai/llm-client.ts",
+          "line": 344,
+          "detail": "Manual fetch('https://api.openai.com/v1/chat/completions', ...) with hand-built headers/body and response.ok/text() error handling."
+        },
+        {
+          "path": "src/lib/ai/llm-client.ts",
+          "line": 368,
+          "detail": "Manual fetch('https://api.anthropic.com/v1/messages', ...) with hand-built headers/body, duplicating the same try/parse pattern as the OpenAI branch."
+        },
+        {
+          "path": "src/lib/ai/llm-client.ts",
+          "line": 393,
+          "detail": "Manual fetch to the Gemini generateContent REST endpoint, a third hand-rolled variant of the same request/parse pattern."
+        },
+        {
+          "path": "package.json",
+          "line": 15,
+          "detail": "\"@anthropic-ai/sdk\": \"^0.36.3\", \"@google/generative-ai\": \"^0.24.0\" (line 16), and \"openai\": \"^4.85.4\" (line 27) are declared dependencies."
+        },
+        {
+          "path": "src/lib/ai/llm-client.ts",
+          "detail": "grep for the import specifiers '@anthropic-ai/sdk', \"from 'openai'\", and '@google/generative-ai' across src/, server/, api/, and electron/ returns zero matches - the installed SDKs are never imported anywhere in the tracked tree."
+        }
+      ],
+      "verification": {
+        "status": "not-required",
+        "counterevidence": [],
+        "note": ""
+      }
+    },
+    {
+      "id": "bloat-002",
+      "kind": "reinvented-library-feature",
+      "title": "color-extractor.ts hand-averages pixel colors while the installed colorthief dependency is completely unused",
+      "severity": "medium",
+      "confidence": "high",
+      "identity": {
+        "path": "src/lib/palette/color-extractor.ts",
+        "symbol": "extractPaletteFromImage",
+        "assertion": "extractPaletteFromImage manually draws the image to a canvas and averages sampled pixel RGB values to derive a background color, reimplementing the dominant-color-extraction purpose of the 'colorthief' package, which is declared in package.json dependencies but has zero imports anywhere in the tracked source tree."
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "src/lib/palette/color-extractor.ts",
+          "line": 19,
+          "detail": "ctx.drawImage + getImageData loop summing r/g/b every 4th pixel and averaging, then darkening by a fixed 0.75 factor to derive bgColor; accentColor is hardcoded to '#D1B852' rather than derived from the image."
+        },
+        {
+          "path": "package.json",
+          "line": 20,
+          "detail": "\"colorthief\": \"^2.6.0\" is a declared dependency."
+        },
+        {
+          "path": "src/components/studio/PhotoPaletteUpload.tsx",
+          "line": 38,
+          "detail": "PhotoPaletteUpload.tsx is the sole caller of extractPaletteFromImage, confirming this hand-rolled path is the one actually exercised in the app."
+        },
+        {
+          "path": "src/lib/palette/color-extractor.ts",
+          "detail": "grep for 'colorthief' (case-insensitive) across src/ and server/, excluding dist/dist-electron, returns zero matches - the declared dependency is never imported."
+        }
+      ],
+      "verification": {
+        "status": "not-required",
+        "counterevidence": [],
+        "note": ""
+      }
+    },
+    {
+      "id": "bloat-003",
+      "kind": "copy-paste-duplicate",
+      "title": "'click outside to close' handler reimplemented independently in three components",
+      "severity": "low",
+      "confidence": "high",
+      "identity": {
+        "path": "src/components/layout/Header.tsx",
+        "symbol": "handleClickOutside",
+        "assertion": "The same mousedown-listener 'close on outside click' pattern (ref.contains check + document.addEventListener('mousedown', ...) + matching cleanup) is copy-pasted independently in Header.tsx, ModelSelectorDropdown.tsx, and ContextualInspector.tsx; no shared hook (e.g. useOnClickOutside) exists - there is no src/hooks directory in the repo."
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "src/components/layout/Header.tsx",
+          "line": 56,
+          "detail": "handleClickOutside closes export/user menus via ref.contains(event.target) checks, registered on document mousedown."
+        },
+        {
+          "path": "src/components/layout/ModelSelectorDropdown.tsx",
+          "line": 42,
+          "detail": "Near-identical handleClickOutside closes the dropdown via dropdownRef.current.contains(e.target) on document mousedown."
+        },
+        {
+          "path": "src/components/studio/ContextualInspector.tsx",
+          "line": 77,
+          "detail": "A third near-identical handleClickOutside closes the FontPicker via wrapperRef.current.contains(e.target) on document mousedown."
+        }
+      ],
+      "verification": {
+        "status": "not-required",
+        "counterevidence": [],
+        "note": ""
+      }
+    },
+    {
+      "id": "bloat-004",
+      "kind": "copy-paste-duplicate",
+      "title": "macOS Gatekeeper copy-to-clipboard widget duplicated between HeroSection and FAQSection",
+      "severity": "low",
+      "confidence": "high",
+      "identity": {
+        "path": "src/components/landing/HeroSection.tsx",
+        "symbol": "copiedMacCmd",
+        "assertion": "HeroSection.tsx already ships a 'copy xattr -cr /Applications/Marlex.app to clipboard' widget (navigator.clipboard.writeText + a copied-state boolean reset via setTimeout(...,2000)); the working-tree (uncommitted) edit to FAQSection.tsx reimplements the identical copy-command-with-2s-reset pattern as a separate handleCopy/copiedCode state instead of factoring out a shared component or hook."
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "src/components/landing/HeroSection.tsx",
+          "line": 198,
+          "detail": "onClick handler calls navigator.clipboard.writeText('xattr -cr /Applications/Marlex.app'); setCopiedMacCmd(true); setTimeout(() => setCopiedMacCmd(false), 2000)."
+        },
+        {
+          "path": "src/components/landing/FAQSection.tsx",
+          "line": 15,
+          "detail": "Working-tree (uncommitted, per git status) handleCopy(code) does navigator.clipboard.writeText(code); setCopiedCode(code); setTimeout(() => setCopiedCode(null), 2000) - the same copy-and-reset pattern, applied to the same xattr command string via the FAQ's code field."
+        }
+      ],
+      "verification": {
+        "status": "not-required",
+        "counterevidence": [],
+        "note": ""
+      }
+    },
+    {
+      "id": "bloat-005",
+      "kind": "reinvented-library-feature",
+      "title": "export-utils.ts hand-implements rounded-rectangle path drawing instead of using native CanvasRenderingContext2D.roundRect()",
+      "severity": "low",
+      "confidence": "medium",
+      "identity": {
+        "path": "src/lib/canvas/export-utils.ts",
+        "symbol": "roundRect",
+        "assertion": "The local roundRect() helper manually builds a rounded-rectangle path with moveTo/lineTo/quadraticCurveTo calls, duplicating the native CanvasRenderingContext2D.roundRect() method (baseline-supported in the Electron/Chromium runtime this app ships in, and in Safari 16+/iOS 16+ which the repo's own recent iPad/PWA support commit targets)."
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "src/lib/canvas/export-utils.ts",
+          "line": 189,
+          "detail": "function roundRect(ctx, x, y, width, height, radius) builds the path via moveTo/lineTo/quadraticCurveTo instead of ctx.roundRect(x, y, width, height, radius)."
+        },
+        {
+          "path": "src/lib/canvas/export-utils.ts",
+          "line": 112,
+          "detail": "Called at 4 call sites (lines 112, 130, 148, 267) for slide element and text-highlight rendering."
+        }
+      ],
+      "verification": {
+        "status": "not-required",
+        "counterevidence": [],
+        "note": "Confidence kept at medium rather than high because roundRect() browser/Electron-version support was not independently version-checked against this repo's exact bundled Chromium/Electron version (package.json declares electron ^34, which bundles a Chromium well past the feature's 2022 baseline, but the exact runtime was not launched to confirm)."
+      }
+    },
+    {
+      "id": "bloat-006",
+      "kind": "dead-code",
+      "title": "scripts/make-icns.js duplicates generate-icons.js's PNG generation and is never invoked by any build script or workflow",
+      "severity": "low",
+      "confidence": "high",
+      "identity": {
+        "path": "scripts/make-icns.js",
+        "assertion": "scripts/make-icns.js re-implements the same sharp(svgBuffer).resize(1024,1024).png().toFile(...) 1024x1024 PNG generation already done by scripts/generate-icons.js (writing to the same public/icon.png and build/icon.png targets), plus an .icns build step, but is not referenced by any package.json script or by .github/workflows/release.yml, and git history shows it was added in commit 6b2c091d and has never been wired into any invocation path."
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "scripts/make-icns.js",
+          "line": 42,
+          "detail": "Regenerates build/icon.png and public/icon.png at 1024x1024 via sharp, duplicating scripts/generate-icons.js lines 14-26 which do the same resize/toFile calls to the same two paths."
+        },
+        {
+          "path": "package.json",
+          "line": 9,
+          "detail": "build/dev:electron/build:electron scripts each invoke 'node scripts/generate-icons.js' only; 'make-icns' does not appear anywhere in package.json."
+        },
+        {
+          "path": "scripts/make-icns.js",
+          "detail": "git log --follow -- scripts/make-icns.js shows a single commit (6b2c091d, 'feat: add PWA web/iPad support...') that added the file; git log -p -- package.json shows no commit ever referenced 'make-icns', so the script was never wired in rather than having been recently orphaned."
+        }
+      ],
+      "verification": {
+        "status": "not-required",
+        "counterevidence": [],
+        "note": ""
+      }
+    }
+  ]
+}

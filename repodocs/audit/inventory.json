@@ -1,0 +1,80 @@
+{
+  "schema_version": 2,
+  "runs": [
+    {
+      "id": "audit-20260823T005819Z-eb01",
+      "scanned_at": "2026-08-23T00:58:19Z",
+      "revision": "17f2b36946e974a0142995daecc51cf35b3f5f58",
+      "worktree_clean": false,
+      "source_state": "codebase",
+      "outcome": "coverage-incomplete",
+      "domains": {
+        "ui": "enabled",
+        "data": "enabled"
+      },
+      "coverage": {
+        "required": [
+          "stack",
+          "architecture",
+          "bloat",
+          "security",
+          "testing",
+          "ui",
+          "data"
+        ],
+        "completed": [
+          "stack",
+          "architecture",
+          "bloat",
+          "security",
+          "testing",
+          "ui",
+          "data"
+        ],
+        "skipped": {},
+        "failed": []
+      },
+      "scope": {
+        "included": [
+          ".github",
+          ".npmrc",
+          "AGENTS.md",
+          "api",
+          "docs",
+          "drizzle.config.ts",
+          "electron",
+          "package.json",
+          "scripts",
+          "server",
+          "src",
+          "vercel.json"
+        ],
+        "excluded": [
+          "dist",
+          "dist-electron",
+          "build",
+          "node_modules"
+        ],
+        "unscanned": [
+          "resources",
+          "scratch",
+          "public"
+        ],
+        "limitations": [
+          "resources/, scratch/, public/ were not cited as evidence by any of the 7 domain auditors: resources/ and public/ hold static build assets (icons, PWA manifest), scratch/ holds a dev scratch file (test-headers.js) — none flagged as risk, but none were positively inspected either, so outcome is honestly coverage-incomplete rather than rounded up.",
+          "No network access was available for this run (offline jCodeMunch profile, no package-manager execution): dependency versions were not checked against a live CVE/advisory database.",
+          "No test runner exists in the repository, so testing-domain findings rely entirely on static inspection; there is no execution-based coverage data to cross-check against.",
+          "jCodeMunch v1.108.291: repository-scoped exclude_skip_directories is ignored during traversal (known upstream limitation) — build/dependency directories were excluded via explicit extra_ignore_patterns at index time instead, and get_dead_code_v2 signal_warning (2 of 3 signals non-discriminating) meant that sweep was corroborated manually rather than trusted directly.",
+          "Individual auditors additionally scoped themselves narrower than the full repository for their own domain; those narrower self-reported scopes are recorded in each auditor own repodocs/audit/findings/<name>.json."
+        ]
+      },
+      "tools": {
+        "jcodemunch": "used"
+      },
+      "verification": {
+        "blind": "passed",
+        "issues": 0
+      }
+    }
+  ]
+}

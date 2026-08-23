@@ -1,0 +1,235 @@
+{
+  "schema_version": 1,
+  "run_id": "audit-20260823T005819Z-eb01",
+  "nodes": [
+    {
+      "id": "renderer",
+      "label": "React renderer (src/)",
+      "group": "client",
+      "kind": "component",
+      "status": "current",
+      "evidence": [
+        {
+          "path": "src/App.tsx",
+          "detail": "root composition of the shared web/Electron/PWA React renderer"
+        }
+      ]
+    },
+    {
+      "id": "electron_shell",
+      "label": "Electron main/preload",
+      "group": "client",
+      "kind": "runtime",
+      "status": "current",
+      "evidence": [
+        {
+          "path": "electron/main.ts",
+          "detail": "BrowserWindow lifecycle, auto-update, CLI-agent discovery/spawn"
+        }
+      ]
+    },
+    {
+      "id": "client_store",
+      "label": "Client state (zustand + localStorage)",
+      "group": "client",
+      "kind": "data",
+      "status": "current",
+      "evidence": [
+        {
+          "path": "src/lib/store/useMarlexStore.ts",
+          "detail": "MarlexProject model, BYOK provider keys, persisted via zustand persist to localStorage"
+        }
+      ]
+    },
+    {
+      "id": "ai_client",
+      "label": "AI content-generation client",
+      "group": "client",
+      "kind": "component",
+      "status": "current",
+      "evidence": [
+        {
+          "path": "src/lib/ai/llm-client.ts",
+          "line": 316,
+          "detail": "generateContentPackage: local-CLI or BYOK provider dispatch, JSON parsing, templated fallback"
+        }
+      ]
+    },
+    {
+      "id": "ai_providers_external",
+      "label": "External AI provider APIs (OpenAI/Anthropic/Gemini)",
+      "group": "external",
+      "kind": "external",
+      "status": "current",
+      "evidence": [
+        {
+          "path": "src/lib/ai/llm-client.ts",
+          "detail": "raw fetch() calls to provider HTTP APIs in BYOK mode (target: replace with @anthropic-ai/sdk / openai / @google/generative-ai per decisions#ADR-009)"
+        }
+      ]
+    },
+    {
+      "id": "backend_api",
+      "label": "api/index.ts (Vercel production entry)",
+      "group": "backend",
+      "kind": "surface",
+      "status": "current",
+      "evidence": [
+        {
+          "path": "vercel.json",
+          "detail": "rewrites /api/(.*) to /api, making api/index.ts the sole deployed serverless function"
+        },
+        {
+          "path": "api/index.ts",
+          "line": 200,
+          "detail": "handler: routes only /api/health and /api/auth/**; no /api/projects route"
+        }
+      ]
+    },
+    {
+      "id": "backend_dev_server",
+      "label": "server/src/index.ts (local-dev Hono app)",
+      "group": "backend",
+      "kind": "runtime",
+      "status": "legacy",
+      "evidence": [
+        {
+          "path": "server/src/index.ts",
+          "line": 71,
+          "detail": "serve() started only when `!process.env.VERCEL`; never runs in the Vercel deployment"
+        },
+        {
+          "path": "package.json",
+          "line": 12,
+          "detail": "\"server:dev\": \"tsx server/src/index.ts\" is the only script that runs this file"
+        }
+      ]
+    },
+    {
+      "id": "schema_source",
+      "label": "Drizzle schema + auth config (server/src/db, server/src/auth.ts)",
+      "group": "backend",
+      "kind": "data",
+      "status": "current",
+      "evidence": [
+        {
+          "path": "server/src/db/schema.ts",
+          "line": 56,
+          "detail": "canonical projects/client_profiles table definitions, referenced by drizzle.config.ts"
+        }
+      ]
+    },
+    {
+      "id": "postgres_db",
+      "label": "Postgres database",
+      "group": "external",
+      "kind": "external",
+      "status": "current",
+      "evidence": [
+        {
+          "path": "drizzle.config.ts",
+          "detail": "drizzle-kit dialect/target confirms Postgres as the persisted store"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "electron_shell",
+      "to": "renderer",
+      "label": "loads the built renderer into the app window",
+      "evidence": [
+        {
+          "path": "electron/main.ts",
+          "detail": "BrowserWindow loads the Vite-built renderer (dev server URL or built index.html)"
+        }
+      ]
+    },
+    {
+      "from": "renderer",
+      "to": "backend_api",
+      "label": "HTTP: auth today, /api/projects only after decisions#ADR-002",
+      "evidence": [
+        {
+          "path": "src/lib/auth-client.ts",
+          "line": 10,
+          "detail": "sanitizeBaseUrl() falls back to https://marlex.vercel.app in production/Electron"
+        }
+      ]
+    },
+    {
+      "from": "renderer",
+      "to": "client_store",
+      "label": "reads/writes local project & settings state",
+      "evidence": [
+        {
+          "path": "src/lib/store/useMarlexStore.ts",
+          "detail": "zustand store consumed across studio/settings/projects components"
+        }
+      ]
+    },
+    {
+      "from": "renderer",
+      "to": "ai_client",
+      "label": "requests carousel content generation",
+      "evidence": [
+        {
+          "path": "src/lib/store/useMarlexStore.ts",
+          "detail": "store action calls generateContentPackage in src/lib/ai/llm-client.ts"
+        }
+      ]
+    },
+    {
+      "from": "ai_client",
+      "to": "ai_providers_external",
+      "label": "BYOK HTTP calls when no local CLI agent is used",
+      "evidence": [
+        {
+          "path": "src/lib/ai/llm-client.ts",
+          "detail": "hand-rolled fetch() to each provider's HTTP API"
+        }
+      ]
+    },
+    {
+      "from": "backend_dev_server",
+      "to": "schema_source",
+      "label": "imports canonical Drizzle schema and auth config (dev only)",
+      "evidence": [
+        {
+          "path": "server/src/index.ts",
+          "line": 34,
+          "detail": "app.get('/api/projects', ...) operates on the imported projects table"
+        },
+        {
+          "path": "server/src/index.ts",
+          "line": 44,
+          "detail": "app.post('/api/projects', ...) also operates on the imported projects table"
+        }
+      ]
+    },
+    {
+      "from": "schema_source",
+      "to": "postgres_db",
+      "label": "canonical schema targets Postgres",
+      "evidence": [
+        {
+          "path": "drizzle.config.ts",
+          "line": 6,
+          "detail": "drizzle-kit schema/migrations generated from ./server/src/db/schema.ts against the Postgres dialect"
+        }
+      ]
+    },
+    {
+      "from": "backend_api",
+      "to": "postgres_db",
+      "label": "direct connection using its own inline, diverged schema copy (see decisions#ADR-002)",
+      "evidence": [
+        {
+          "path": "api/index.ts",
+          "line": 62,
+          "detail": "hand-declares pgTable('projects', {...}) inline instead of importing schema_source; missing clientProfileId/client_profiles present in the canonical copy"
+        }
+      ]
+    }
+  ]
+}

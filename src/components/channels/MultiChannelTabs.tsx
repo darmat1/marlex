@@ -33,8 +33,10 @@ export const MultiChannelTabs: React.FC = () => {
     <div className="flex-1 flex flex-col h-full bg-zinc-950 p-6 overflow-hidden">
       {/* Top Channel Select Bar */}
       <div className="flex items-center justify-between pb-4 border-b border-zinc-800">
-        <div className="flex items-center gap-2">
+        <div role="tablist" aria-label="Канал" className="flex items-center gap-2">
           <button
+            role="tab"
+            aria-selected={activeChannel === 'telegram'}
             onClick={() => setActiveChannel('telegram')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
               activeChannel === 'telegram'
@@ -47,6 +49,8 @@ export const MultiChannelTabs: React.FC = () => {
           </button>
 
           <button
+            role="tab"
+            aria-selected={activeChannel === 'linkedin'}
             onClick={() => setActiveChannel('linkedin')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
               activeChannel === 'linkedin'
@@ -59,6 +63,8 @@ export const MultiChannelTabs: React.FC = () => {
           </button>
 
           <button
+            role="tab"
+            aria-selected={activeChannel === 'threads'}
             onClick={() => setActiveChannel('threads')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
               activeChannel === 'threads'

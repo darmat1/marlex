@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 import { useMarlexStore } from '../../lib/store/useMarlexStore';
 import { MarlexProject, ProjectMember, ProjectMemberRole } from '../../types';
+import { Modal } from '../ui/Modal';
+import { DEFAULT_BG_COLOR, DEFAULT_ACCENT_COLOR } from '../../lib/constants';
 
 interface ProjectSettingsModalProps {
   isOpen: boolean;
@@ -61,8 +63,8 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({ isOp
       name: 'Новый проект',
       brandHandle: '@brand',
       authorName: activeProject.authorName || 'Автор',
-      bgColor: '#9B6140',
-      accentColor: '#D1B852',
+      bgColor: DEFAULT_BG_COLOR,
+      accentColor: DEFAULT_ACCENT_COLOR,
       textColor: '#FFFFFF',
       font: 'Source Sans 3',
       photoOpacity: 15,
@@ -150,7 +152,12 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({ isOp
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-      <div className="w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        labelledBy="project-settings-modal-title"
+        className="w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+      >
         {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800 bg-zinc-950/60">
           <div className="flex items-center gap-2.5">
@@ -158,7 +165,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({ isOp
               <FolderGit2 className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-zinc-100 flex items-center gap-2">
+              <h2 id="project-settings-modal-title" className="text-sm font-bold text-zinc-100 flex items-center gap-2">
                 Настройки проекта
                 <span className="text-xs px-2 py-0.5 bg-zinc-800 text-zinc-400 font-normal rounded-md">
                   {formData.name}
@@ -169,6 +176,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({ isOp
           </div>
           <button
             onClick={onClose}
+            aria-label="Закрыть настройки проекта"
             className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
@@ -196,7 +204,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({ isOp
                 >
                   <span
                     className="w-2 h-2 rounded-full shrink-0"
-                    style={{ backgroundColor: p.bgColor || '#9B6140' }}
+                    style={{ backgroundColor: p.bgColor || DEFAULT_BG_COLOR }}
                   />
                   <span className="truncate max-w-[130px]">{p.name}</span>
                 </button>
@@ -447,6 +455,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({ isOp
                               onClick={() => handleRemoveMember(member.id)}
                               className="p-1.5 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
                               title="Удалить из проекта"
+                              aria-label="Удалить участника из проекта"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -460,7 +469,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({ isOp
             </div>
           )}
         </div>
-      </div>
+      </Modal>
     </div>
   );
 };

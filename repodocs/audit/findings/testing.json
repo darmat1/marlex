@@ -1,0 +1,261 @@
+{
+  "schema_version": 2,
+  "run_id": "audit-20260823T005819Z-eb01",
+  "auditor": "testing",
+  "scanned_at": "2026-08-23T01:20:00Z",
+  "scope": {
+    "included": [
+      "package.json",
+      "tsconfig.json",
+      "tsconfig.node.json",
+      ".github/workflows/release.yml",
+      "AGENTS.md",
+      "GEMINI.md",
+      "README.md",
+      "docs/superpowers/plans/2026-08-22-landing-and-auto-update.md",
+      "docs/superpowers/specs/2026-08-22-landing-and-auto-update-design.md",
+      "src",
+      "server",
+      "api",
+      "electron",
+      "scripts",
+      "scratch/test-headers.js"
+    ],
+    "excluded": [],
+    "unscanned": [
+      "node_modules",
+      "dist",
+      "dist-electron",
+      "build",
+      "public",
+      "resources",
+      "package-lock.json"
+    ],
+    "limitations": [
+      "No test runner is installed, so no coverage/execution data exists to cross-check; all findings rely on static inspection of source, package.json, and .github/workflows.",
+      "jCodeMunch get_untested_symbols/get_hotspots use import-graph reachability and cyclomatic-complexity heuristics, not runtime coverage; treated only as prioritization signals and corroborated against direct source reads.",
+      "Repository content (comments, docs, commit history) was treated as untrusted data; no instructions found in it were followed."
+    ]
+  },
+  "findings": [
+    {
+      "id": "testing-001",
+      "kind": "no-verification-infra",
+      "title": "No automated test infrastructure exists anywhere in the repository",
+      "severity": "high",
+      "confidence": "high",
+      "identity": {
+        "path": "package.json",
+        "assertion": "package.json declares no test script and no test framework (vitest/jest/mocha/playwright/cypress/@testing-library) in dependencies or devDependencies, and no test files exist under src/, server/, api/, or electron/"
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "package.json",
+          "detail": "scripts block contains only dev, build, dev:electron, build:electron, server:dev — no \"test\" script; devDependencies list has no test framework package"
+        },
+        {
+          "path": ".github/workflows/release.yml",
+          "detail": "CI workflow only runs npm install, npm run build, tsc for electron, and electron-builder --publish on tag push; no test or lint step"
+        },
+        {
+          "path": "src/lib/ai/llm-client.ts",
+          "detail": "grep for describe(/it(/test(/expect( across src, server, api, electron matched only unrelated .test()/.split() calls, no actual test code"
+        }
+      ],
+      "verification": {
+        "status": "confirmed",
+        "counterevidence": [],
+        "note": "Independently re-derived from scratch (not trusting the original grep): find for *.test.*/*.spec.*/__tests__ across the repo returns zero files; package.json scripts/devDependencies confirmed to have no test framework; .github/workflows/release.yml confirmed to run build/tsc/electron-builder only, no test or lint step."
+      }
+    },
+    {
+      "id": "testing-002",
+      "kind": "assurance-level-mismatch",
+      "title": "AGENTS.md mandates TDD and verification-before-completion, but recorded practice substitutes a compile-only build check",
+      "severity": "medium",
+      "confidence": "high",
+      "identity": {
+        "path": "AGENTS.md",
+        "assertion": "AGENTS.md requires following test-driven-development and verification-before-completion skills and forbids claiming a fix/feature complete without running verification commands, while the repository's own implementation-plan doc treats `npm run build` (a type-check + bundle step) as the sole completion verification and no test files exist to run"
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "AGENTS.md",
+          "line": 6,
+          "detail": "\"Before executing any code changes... invoke the appropriate Superpowers skill (e.g. ... test-driven-development ...)\""
+        },
+        {
+          "path": "AGENTS.md",
+          "line": 11,
+          "detail": "\"Test-Driven & Verification: Always follow test-driven-development and verification-before-completion. Never claim a fix or feature is complete without running verification commands and confirming output.\""
+        },
+        {
+          "path": "docs/superpowers/plans/2026-08-22-landing-and-auto-update.md",
+          "detail": "Every task's completion step is phrased \"Step 4: Verify build & commit / Run npm run build and verify cleanly\" — build/type-check only, no test execution, matching the repo-wide absence of a test suite (testing-001)"
+        }
+      ],
+      "verification": {
+        "status": "not-required",
+        "counterevidence": [],
+        "note": ""
+      }
+    },
+    {
+      "id": "testing-003",
+      "kind": "unverified-critical-path",
+      "title": "Core AI content-generation pipeline (multi-provider fetch, JSON parsing, fallback synthesis) has zero test coverage",
+      "severity": "high",
+      "confidence": "high",
+      "identity": {
+        "path": "src/lib/ai/llm-client.ts",
+        "symbol": "generateContentPackage",
+        "assertion": "generateContentPackage (and its buildDynamicFallback/getSemanticKnowledge fallback path) branches across local-CLI, OpenAI, Anthropic, and Gemini providers, hand-parses model output JSON with brace-slicing, and falls back to templated content on any parse failure, with no test file referencing or importing this module"
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "src/lib/ai/llm-client.ts",
+          "line": 316,
+          "detail": "generateContentPackage: cyclomatic complexity 41, jCodeMunch hotspot_score 56.84 (top-5 hotspot in repo), flagged 'unreached' by get_untested_symbols/get_hotspots — no test imports this file"
+        },
+        {
+          "path": "src/lib/ai/llm-client.ts",
+          "line": 255,
+          "detail": "buildDynamicFallback silently substitutes canned Russian-language health/marketing copy (via getSemanticKnowledge keyword matching) whenever the JSON.parse of a live model response throws, with no check confirming the fallback content is coherent for the actual user topic"
+        }
+      ],
+      "verification": {
+        "status": "confirmed",
+        "counterevidence": [],
+        "note": "generateContentPackage confirmed at llm-client.ts:316, cyclomatic 41, ranked #5 hotspot in repo. find_references returns exactly one caller (useMarlexStore.ts) and no test file; corroborated by plain-text grep."
+      }
+    },
+    {
+      "id": "testing-004",
+      "kind": "unverified-critical-path",
+      "title": "Canvas rendering and slide export pipeline (one of the highest-complexity paths in the repo) is entirely untested",
+      "severity": "high",
+      "confidence": "high",
+      "identity": {
+        "path": "src/lib/canvas/export-utils.ts",
+        "symbol": "renderSlideToCanvas",
+        "assertion": "renderSlideToCanvas and its callers exportSlidesToZip/exportSlidesToPdf implement the product's core deliverable (turning slide state into rasterized carousel images and packaged zip/pdf output) with the highest cyclomatic complexity of any function in the repository and no test coverage"
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "src/lib/canvas/export-utils.ts",
+          "line": 19,
+          "detail": "jCodeMunch get_hotspots: renderSlideToCanvas cyclomatic=73, max_nesting=6, churn=4, hotspot_score=50.60, assessment=high — one of the highest-complexity symbols in the repo (independently verified: 3rd highest overall, behind ContextualInspector.tsx:165 at 79 and InteractiveSlideCanvas.tsx:16 at 80, both also untested)"
+        },
+        {
+          "path": "src/lib/canvas/export-utils.ts",
+          "line": 281,
+          "detail": "exportSlidesToZip/exportSlidesToPdf call renderSlideToCanvas per slide and package the result via jszip/jspdf; no test exercises boundary cases (missing background image, zero slides, oversized text wrapping in drawWrappedTextWithAccents)"
+        }
+      ],
+      "verification": {
+        "status": "confirmed",
+        "counterevidence": [],
+        "note": "Independent verifier confirmed renderSlideToCanvas cyclomatic=73 and zero test references (find_references + grep both empty), but found the original title's superlative 'single highest-complexity symbol found in the repo' is factually wrong — two other functions (ContextualInspector.tsx:165 cyclomatic=79, InteractiveSlideCanvas.tsx:16 cyclomatic=80) rank higher, and are also untested. Title/evidence corrected accordingly; the substantive claim (core export pipeline, high complexity, zero tests) stands and severity is unchanged."
+      }
+    },
+    {
+      "id": "testing-005",
+      "kind": "unverified-critical-path",
+      "title": "Hand-rolled semver comparator driving the in-app auto-updater has no tests",
+      "severity": "high",
+      "confidence": "medium",
+      "identity": {
+        "path": "electron/main.ts",
+        "symbol": "compareSemver",
+        "assertion": "compareSemver is a custom, non-library semver comparison (splits on '.', parseInt per segment, no pre-release/build-metadata handling) used to decide hasUpdate for every desktop user against the live GitHub releases API, with no unit test exercising its edge cases"
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "electron/main.ts",
+          "line": 7,
+          "detail": "compareSemver(v1, v2): `v1.replace(/^v/, '').split('.').map(n => parseInt(n,10) || 0)` then numeric compare per segment; does not special-case pre-release suffixes (e.g. '0.1.4-beta' segment 'beta' from '4-beta' parses via parseInt to 4, silently dropping the pre-release marker) or differing segment counts beyond zero-padding"
+        },
+        {
+          "path": "electron/main.ts",
+          "line": 185,
+          "detail": "const hasUpdate = compareSemver(cleanLatest, currentVersion) > 0; — result directly gates the update-available banner shown to all desktop users on every launch"
+        },
+        {
+          "path": "electron/main.ts",
+          "line": 192,
+          "detail": "dmgAsset selection (isArm ? name.includes('arm64.dmg') : name.endsWith('.dmg') && !name.includes('arm64')) is adjacent untested logic picking the wrong installer asset would silently break updates for one architecture"
+        }
+      ],
+      "verification": {
+        "status": "confirmed",
+        "counterevidence": [],
+        "note": "compareSemver confirmed hand-rolled at electron/main.ts:7, gates hasUpdate at line 185; find_references and grep both return zero hits outside main.ts."
+      }
+    },
+    {
+      "id": "testing-006",
+      "kind": "unverified-critical-path",
+      "title": "Hand-rolled Node-to-Web request/response adapter for the production serverless API entrypoint has no tests",
+      "severity": "high",
+      "confidence": "high",
+      "identity": {
+        "path": "api/index.ts",
+        "symbol": "handler",
+        "assertion": "api/index.ts implements a manual IncomingMessage<->Web Request/Response bridge (readBody, setCors, toWebRequest, writeWebResponse, handler) that fronts all API and better-auth traffic for the deployed app, and jCodeMunch confirms every one of these functions is unreached by any test at confidence 1.0"
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "api/index.ts",
+          "line": 128,
+          "detail": "readBody, setCors, toWebRequest, writeWebResponse, handler all reported by get_untested_symbols with reason='unreached', confidence=1.0 — no test file imports api/index.ts"
+        },
+        {
+          "path": "api/index.ts",
+          "line": 200,
+          "detail": "handler is the single Vercel serverless entrypoint wired to better-auth (server/src/auth.ts) and the projects API; a bug in body-streaming, CORS header logic, or status/header translation here breaks authentication and all API calls in production"
+        }
+      ],
+      "verification": {
+        "status": "confirmed",
+        "counterevidence": [],
+        "note": "get_untested_symbols independently confirms readBody/setCors/toWebRequest/writeWebResponse/handler in api/index.ts all unreached, confidence 1.0, 6/6 untested, 0.0% reached. Grep confirms none of these identifiers appear outside api/index.ts."
+      }
+    },
+    {
+      "id": "testing-007",
+      "kind": "unverified-critical-path",
+      "title": "Cross-platform local-CLI binary discovery and process spawning in Electron main process is untested",
+      "severity": "medium",
+      "confidence": "high",
+      "identity": {
+        "path": "electron/main.ts",
+        "symbol": "findBinary",
+        "assertion": "getSearchPaths/findBinary/hasApp implement hand-written, platform-branching filesystem probing (macOS .app bundles, Windows LOCALAPPDATA/ProgramFiles, PATH search with extension lists) that determines which local AI CLI binary gets spawned via child_process, with no test coverage on any platform branch"
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "electron/main.ts",
+          "line": 49,
+          "detail": "findBinary loops over getSearchPaths() x platform-specific extension list, using fs.existsSync with best-effort try/catch swallowing; jCodeMunch flags findBinary, hasApp, getSearchPaths, createWindow all 'unreached', confidence 1.0"
+        },
+        {
+          "path": "electron/main.ts",
+          "line": 259,
+          "detail": "createWindow/spawn path (hotspot_score 30.76, cyclomatic 14) uses the discovered binaryPath to spawn a child process with an assembled PATH env var; only one OS's branches can ever be exercised on a given CI/dev machine, and none are exercised by any test"
+        }
+      ],
+      "verification": {
+        "status": "not-required",
+        "counterevidence": [],
+        "note": ""
+      }
+    }
+  ]
+}

@@ -1,3 +1,6 @@
+import OpenAI from 'openai';
+import Anthropic from '@anthropic-ai/sdk';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { LLMConfig, GenerationResult, SlideItem } from '../../types';
 import { buildMarketingSystemPrompt } from '../prompts/presets';
 
@@ -313,134 +316,95 @@ function buildDynamicFallback(rawInput: string, targetCount: number, clientProfi
   };
 }
 
-export async function generateContentPackage(
-  rawInput: string,
+async function callLocalCli(
   config: LLMConfig,
-  clientProfileId: string
-): Promise<GenerationResult> {
-  const targetSlideCount = extractSlideCount(rawInput);
-  const systemPrompt = buildMarketingSystemPrompt(targetSlideCount);
+  systemPrompt: string,
+  rawInput: string,
+  targetSlideCount: number
+): Promise<string> {
+  const fullPrompt = `${systemPrompt}\n\nСЫРОЙ ЗАПРОС / ТЕМА ПОЛЬЗОВАТЕЛЯ:\n${rawInput}\n\nТРЕБОВАНИЕ: Сгенерируй ровно ${targetSlideCount} слайдов! Верни ТОЛЬКО чистый JSON объект!`;
+  return window.electronAPI!.executeCLI({
+    cliType: config.cliAgent || 'chatgpt',
+    prompt: fullPrompt,
+    model: config.cliModel,
+  });
+}
 
-  let rawJsonText = '';
+async function callOpenAI(
+  config: LLMConfig,
+  systemPrompt: string,
+  rawInput: string,
+  targetSlideCount: number
+): Promise<string> {
+  if (!config.openaiKey) throw new Error('OpenAI API key не указан в настройках.');
+  const openai = new OpenAI({ apiKey: config.openaiKey, dangerouslyAllowBrowser: true });
+  const completion = await openai.chat.completions.create({
+    model: config.model || 'gpt-4o',
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: `Запрос пользователя: ${rawInput}\n\nСгенерируй ровно ${targetSlideCount} слайдов.` },
+    ],
+    response_format: { type: 'json_object' },
+    temperature: 0.4,
+  });
+  return completion.choices[0]?.message?.content || '';
+}
 
-  // 1. LOCAL CLI / MAC APP MODE (Claude Code, ChatGPT, Gemini CLI)
-  if (config.mode === 'local_cli') {
-    if (window.electronAPI && window.electronAPI.executeCLI) {
-      try {
-        const fullPrompt = `${systemPrompt}\n\nСЫРОЙ ЗАПРОС / ТЕМА ПОЛЬЗОВАТЕЛЯ:\n${rawInput}\n\nТРЕБОВАНИЕ: Сгенерируй ровно ${targetSlideCount} слайдов! Верни ТОЛЬКО чистый JSON объект!`;
-        rawJsonText = await window.electronAPI.executeCLI({
-          cliType: config.cliAgent || 'chatgpt',
-          prompt: fullPrompt,
-          model: config.cliModel,
-        });
-      } catch (cliErr: any) {
-        console.warn('CLI execution fallback to semantic marketing engine:', cliErr);
-        return buildDynamicFallback(rawInput, targetSlideCount, clientProfileId);
-      }
-    } else {
-      return buildDynamicFallback(rawInput, targetSlideCount, clientProfileId);
-    }
-  }
-  // 2. BYOK MODE
-  else if (config.provider === 'openai') {
-    if (!config.openaiKey) throw new Error('OpenAI API key не указан в настройках.');
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${config.openaiKey}`,
-      },
-      body: JSON.stringify({
-        model: config.model || 'gpt-4o',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Запрос пользователя: ${rawInput}\n\nСгенерируй ровно ${targetSlideCount} слайдов.` }
-        ],
-        response_format: { type: 'json_object' },
-        temperature: 0.4,
-      }),
-    });
+async function callAnthropic(
+  config: LLMConfig,
+  systemPrompt: string,
+  rawInput: string,
+  targetSlideCount: number
+): Promise<string> {
+  if (!config.anthropicKey) throw new Error('Anthropic Claude API key не указан в настройках.');
+  const anthropic = new Anthropic({ apiKey: config.anthropicKey, dangerouslyAllowBrowser: true });
+  const message = await anthropic.messages.create({
+    model: config.model || 'claude-3-5-sonnet-20241022',
+    max_tokens: 4000,
+    system: systemPrompt,
+    messages: [
+      { role: 'user', content: `Запрос: ${rawInput}\nСгенерируй ровно ${targetSlideCount} слайдов в JSON.` },
+    ],
+  });
+  const firstBlock = message.content[0];
+  return firstBlock && firstBlock.type === 'text' ? firstBlock.text : '';
+}
 
-    if (!response.ok) {
-      const err = await response.text();
-      throw new Error(`OpenAI Error: ${err}`);
-    }
-    const data = await response.json();
-    rawJsonText = data.choices[0].message.content;
-  } else if (config.provider === 'anthropic') {
-    if (!config.anthropicKey) throw new Error('Anthropic Claude API key не указан в настройках.');
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': config.anthropicKey,
-        'anthropic-version': '2023-06-01',
-        'dangerously-allow-browser': 'true',
-      },
-      body: JSON.stringify({
-        model: config.model || 'claude-3-5-sonnet-20241022',
-        max_tokens: 4000,
-        system: systemPrompt,
-        messages: [
-          { role: 'user', content: `Запрос: ${rawInput}\nСгенерируй ровно ${targetSlideCount} слайдов в JSON.` }
-        ],
-      }),
-    });
+async function callGemini(
+  config: LLMConfig,
+  systemPrompt: string,
+  rawInput: string,
+  targetSlideCount: number
+): Promise<string> {
+  if (!config.geminiKey) throw new Error('Google Gemini API key не указан в настройках.');
+  const genAI = new GoogleGenerativeAI(config.geminiKey);
+  const model = genAI.getGenerativeModel({
+    model: config.model || 'gemini-2.0-flash',
+    generationConfig: { responseMimeType: 'application/json', temperature: 0.4 },
+  });
+  const result = await model.generateContent(
+    `${systemPrompt}\n\nЗапрос: ${rawInput}\nСгенерируй ровно ${targetSlideCount} слайдов в JSON.`
+  );
+  return result.response.text();
+}
 
-    if (!response.ok) {
-      const err = await response.text();
-      throw new Error(`Anthropic Error: ${err}`);
-    }
-    const data = await response.json();
-    rawJsonText = data.content[0].text;
-  } else if (config.provider === 'gemini') {
-    if (!config.geminiKey) throw new Error('Google Gemini API key не указан в настройках.');
-    const model = config.model || 'gemini-2.0-flash';
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${config.geminiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: 'user',
-            parts: [
-              { text: `${systemPrompt}\n\nЗапрос: ${rawInput}\nСгенерируй ровно ${targetSlideCount} слайдов в JSON.` }
-            ]
-          }
-        ],
-        generationConfig: {
-          responseMimeType: 'application/json',
-          temperature: 0.4
-        }
-      }),
-    });
-
-    if (!response.ok) {
-      const err = await response.text();
-      throw new Error(`Google Gemini Error: ${err}`);
-    }
-    const data = await response.json();
-    rawJsonText = data.candidates[0].content.parts[0].text;
-  }
-
-  // Parse JSON response
+/** Extracts the {...} object from a model response and parses it; null on any malformed JSON. */
+export function parseModelJson(rawJsonText: string): any | null {
   let cleanJson = rawJsonText.trim();
   const firstBrace = cleanJson.indexOf('{');
   const lastBrace = cleanJson.lastIndexOf('}');
-
   if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
     cleanJson = cleanJson.substring(firstBrace, lastBrace + 1);
   }
-
-  let parsed: any;
   try {
-    parsed = JSON.parse(cleanJson);
-  } catch (e: any) {
-    return buildDynamicFallback(rawInput, targetSlideCount, clientProfileId);
+    return JSON.parse(cleanJson);
+  } catch {
+    return null;
   }
+}
 
+function buildGenerationResult(parsed: any, rawInput: string, clientProfileId: string): GenerationResult {
   const now = new Date().toISOString();
-
   return {
     id: `gen_${Date.now()}`,
     title: parsed.title || cleanPromptTopic(rawInput),
@@ -462,4 +426,42 @@ export async function generateContentPackage(
     createdAt: now,
     updatedAt: now,
   };
+}
+
+export async function generateContentPackage(
+  rawInput: string,
+  config: LLMConfig,
+  clientProfileId: string
+): Promise<GenerationResult> {
+  const targetSlideCount = extractSlideCount(rawInput);
+  const systemPrompt = buildMarketingSystemPrompt(targetSlideCount);
+
+  let rawJsonText: string;
+
+  if (config.mode === 'local_cli') {
+    if (!window.electronAPI?.executeCLI) {
+      return buildDynamicFallback(rawInput, targetSlideCount, clientProfileId);
+    }
+    try {
+      rawJsonText = await callLocalCli(config, systemPrompt, rawInput, targetSlideCount);
+    } catch (cliErr: any) {
+      console.warn('CLI execution fallback to semantic marketing engine:', cliErr);
+      return buildDynamicFallback(rawInput, targetSlideCount, clientProfileId);
+    }
+  } else if (config.provider === 'openai') {
+    rawJsonText = await callOpenAI(config, systemPrompt, rawInput, targetSlideCount);
+  } else if (config.provider === 'anthropic') {
+    rawJsonText = await callAnthropic(config, systemPrompt, rawInput, targetSlideCount);
+  } else if (config.provider === 'gemini') {
+    rawJsonText = await callGemini(config, systemPrompt, rawInput, targetSlideCount);
+  } else {
+    rawJsonText = '';
+  }
+
+  const parsed = parseModelJson(rawJsonText);
+  if (!parsed) {
+    return buildDynamicFallback(rawInput, targetSlideCount, clientProfileId);
+  }
+
+  return buildGenerationResult(parsed, rawInput, clientProfileId);
 }

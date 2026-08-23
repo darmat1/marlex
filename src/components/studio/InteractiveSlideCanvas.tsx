@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { CanvasElement, SlideItem, ClientProfile } from '../../types';
 import { getSlideElements } from '../../lib/canvas/element-converter';
+import { DEFAULT_ACCENT_COLOR } from '../../lib/constants';
 
 interface InteractiveSlideCanvasProps {
   slide: SlideItem;
@@ -27,7 +28,7 @@ export const InteractiveSlideCanvas: React.FC<InteractiveSlideCanvasProps> = ({
   const activePhoto = slide.photoUrl !== undefined ? slide.photoUrl : (isCover ? bgPhotoUrl : null);
   const elements = getSlideElements(slide, profile, totalSlides, activePhoto);
   const bgColor = slide.slideBgColor || profile.defaultBgColor || '#1c1917';
-  const accentColor = slide.slideAccentColor || profile.defaultAccentColor || '#D1B852';
+  const accentColor = slide.slideAccentColor || profile.defaultAccentColor || DEFAULT_ACCENT_COLOR;
 
   // Dynamically load Google Fonts for elements
   useEffect(() => {

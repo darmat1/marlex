@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useClickOutside } from '../../lib/hooks/useClickOutside';
 import { 
   ChevronDown, 
   Terminal, 
@@ -38,15 +39,7 @@ export const ModelSelectorDropdown: React.FC<ModelSelectorDropdownProps> = ({
   }, []);
 
   // Close dropdown on outside click
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    if (isOpen) document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen]);
+  useClickOutside(dropdownRef, () => setIsOpen(false), isOpen);
 
   const agents: { id: CLIAgent; name: string; icon: string; desc: string }[] = [
     { id: 'chatgpt', name: 'ChatGPT', icon: '❇️', desc: 'ChatGPT Plus / Mac App' },

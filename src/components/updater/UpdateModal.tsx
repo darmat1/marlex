@@ -2,6 +2,7 @@ import React from 'react';
 import { Sparkles, Download, X, ExternalLink, ArrowRight } from 'lucide-react';
 import { AppUpdateInfo } from '../../types';
 import { openDownloadUrl } from '../../lib/updater';
+import { Modal } from '../ui/Modal';
 
 interface UpdateModalProps {
   update: AppUpdateInfo;
@@ -14,7 +15,12 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({ update, isOpen, onClos
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in font-sans select-none">
-      <div className="bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl relative">
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        labelledBy="update-modal-title"
+        className="bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl relative"
+      >
         {/* Header */}
         <div className="p-6 border-b border-zinc-800/80 bg-gradient-to-r from-amber-500/10 via-zinc-900 to-zinc-900 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -22,7 +28,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({ update, isOpen, onClos
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white">Доступна новая версия Marlex</h3>
+              <h3 id="update-modal-title" className="text-base font-bold text-white">Доступна новая версия Marlex</h3>
               <div className="text-xs text-amber-400/90 font-mono">
                 v{update.currentVersion} → <span className="font-bold">v{update.latestVersion}</span>
               </div>
@@ -30,6 +36,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({ update, isOpen, onClos
           </div>
           <button
             onClick={onClose}
+            aria-label="Закрыть"
             className="p-2 text-zinc-400 hover:text-white rounded-xl hover:bg-zinc-800 transition-colors"
           >
             <X className="w-4 h-4" />
@@ -81,7 +88,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({ update, isOpen, onClos
             </button>
           </div>
         </div>
-      </div>
+      </Modal>
     </div>
   );
 };

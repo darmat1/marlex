@@ -228,6 +228,7 @@ export const StudioLayout: React.FC = () => {
                 onClick={() => setIsLeftDockOpen(false)}
                 className="p-1 rounded-lg text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-colors cursor-pointer"
                 title="Свернуть панель"
+                aria-label="Свернуть панель"
               >
                 <PanelLeftClose className="w-4 h-4" />
               </button>
@@ -319,6 +320,7 @@ export const StudioLayout: React.FC = () => {
             onClick={() => setIsLeftDockOpen(true)}
             className="absolute left-3 top-3 z-30 p-2 rounded-xl bg-zinc-900/90 border border-zinc-800 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 shadow-xl transition-all cursor-pointer"
             title="Открыть панель инструментов"
+            aria-label="Открыть панель инструментов"
           >
             <PanelLeftOpen className="w-4 h-4" />
           </button>
@@ -343,6 +345,7 @@ export const StudioLayout: React.FC = () => {
                   <button
                     onClick={handlePrevSlide}
                     disabled={activeSlideIndex === 0}
+                    aria-label="Предыдущий слайд"
                     className="absolute -left-16 z-20 p-3 rounded-full bg-zinc-900/90 border border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-800 disabled:opacity-20 disabled:pointer-events-none transition-all shadow-2xl cursor-pointer"
                   >
                     <ChevronLeft className="w-5 h-5" />
@@ -363,6 +366,7 @@ export const StudioLayout: React.FC = () => {
                   <button
                     onClick={handleNextSlide}
                     disabled={activeSlideIndex === currentResult.slides.length - 1}
+                    aria-label="Следующий слайд"
                     className="absolute -right-16 z-20 p-3 rounded-full bg-zinc-900/90 border border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-800 disabled:opacity-20 disabled:pointer-events-none transition-all shadow-2xl cursor-pointer"
                   >
                     <ChevronRight className="w-5 h-5" />
@@ -411,6 +415,7 @@ export const StudioLayout: React.FC = () => {
               onClick={() => setIsRightInspectorOpen(false)}
               className="absolute left-2 top-3 p-1 rounded-lg text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-colors cursor-pointer"
               title="Скрыть инспектор"
+              aria-label="Скрыть инспектор"
             >
               <PanelRightClose className="w-3.5 h-3.5" />
             </button>
@@ -420,6 +425,7 @@ export const StudioLayout: React.FC = () => {
             onClick={() => setIsRightInspectorOpen(true)}
             className="absolute right-3 top-3 z-30 p-2 rounded-xl bg-zinc-900/90 border border-zinc-800 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 shadow-xl transition-all cursor-pointer"
             title="Открыть инспектор"
+            aria-label="Открыть инспектор"
           >
             <PanelRightOpen className="w-4 h-4" />
           </button>

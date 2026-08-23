@@ -1,0 +1,135 @@
+{
+  "schema_version": 2,
+  "run_id": "audit-20260823T005819Z-eb01",
+  "auditor": "architecture",
+  "scanned_at": "2026-08-22T22:02:07Z",
+  "scope": {
+    "included": [
+      "electron",
+      "api/index.ts",
+      "server/src",
+      "src/lib",
+      "src/components",
+      "src/types/index.ts",
+      "src/App.tsx",
+      "src/main.tsx",
+      "vercel.json",
+      "package.json"
+    ],
+    "excluded": [],
+    "unscanned": [
+      "dist",
+      "dist-electron",
+      "node_modules",
+      "resources",
+      "build",
+      "scratch"
+    ],
+    "limitations": [
+      "No .jcodemunch.jsonc architecture.layers rules are defined, so get_layer_violations returned an empty result rather than a real check; layering was instead assessed by direct read of electron/main.ts, electron/preload.ts, api/index.ts, server/src/*, src/lib/*.",
+      "Runtime behavior (which backend, server/ or api/, actually serves a given deployment) was inferred from vercel.json rewrites, package.json scripts, and src/lib/auth-client.ts defaults, not from an executed deployment.",
+      "Coverage is limited to the 57 files jCodeMunch indexed (src/, electron/, server/, api/, scripts/, root config); generated/build output directories were not inspected."
+    ]
+  },
+  "findings": [
+    {
+      "id": "architecture-001",
+      "kind": "mixed-architecture",
+      "title": "Two independently-maintained backend implementations (server/ Hono app, api/index.ts Vercel handler) duplicate DB schema and Better Auth setup and have already drifted",
+      "severity": "high",
+      "confidence": "high",
+      "identity": {
+        "path": "api/index.ts",
+        "assertion": "api/index.ts re-declares the Postgres schema (user/session/account/verification/projects) and the betterAuth() config inline instead of importing server/src/db/schema.ts and server/src/auth.ts, and its copy of the projects table has already diverged from the server/ copy (missing the clientProfileId column and the entire client_profiles table); its raw-Node handler also only serves /api/health and /api/auth/**, not the /api/projects CRUD routes that server/src/index.ts implements for the same responsibility."
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "api/index.ts",
+          "line": 62,
+          "detail": "const projects = pgTable('projects', {...}) — a second, hand-copied definition of the same 'projects' table declared in server/src/db/schema.ts (line 70), missing the clientProfileId column and the client_profiles table entirely."
+        },
+        {
+          "path": "server/src/db/schema.ts",
+          "line": 56,
+          "detail": "clientProfiles/projects tables (with clientProfileId FK) are the canonical schema used by server/src/db/index.ts and server/src/auth.ts; api/index.ts has no import of this file and no reference to it."
+        },
+        {
+          "path": "api/index.ts",
+          "line": 95,
+          "detail": "const auth = betterAuth({...}) duplicates server/src/auth.ts's betterAuth() call (same options shape, same fallback secret string 'marlex-content-engine-super-secret-key-2026') as an independent inline config rather than a shared import."
+        },
+        {
+          "path": "api/index.ts",
+          "line": 200,
+          "detail": "handler() only routes '/api/health' and '/api/auth/**' to 404 for everything else — it does not implement the '/api/projects' GET/POST routes that server/src/index.ts (lines 34-65) exposes for the same 'projects' resource."
+        },
+        {
+          "path": "vercel.json",
+          "line": 4,
+          "detail": "rewrites '/api/(.*)' -> '/api' confirms api/index.ts is the actual serverless entry point used in the Vercel deployment (the production backend)."
+        },
+        {
+          "path": "src/lib/auth-client.ts",
+          "line": 10,
+          "detail": "sanitizeBaseUrl() falls back to 'https://marlex.vercel.app' for Electron/production, i.e. api/index.ts (not server/src/index.ts) is the backend real clients talk to in production and in the desktop app."
+        },
+        {
+          "path": "package.json",
+          "line": 10,
+          "detail": "\"server:dev\": \"tsx server/src/index.ts\" is the only script that runs server/src/index.ts; it is a separate, locally-run entry point never wired into the Vercel build or imported by api/index.ts."
+        }
+      ],
+      "verification": {
+        "status": "confirmed",
+        "counterevidence": [],
+        "note": "Independent verifier confirmed via vercel.json, api/index.ts, and server/src/index.ts: api/index.ts is the sole Vercel production entry and does not implement /api/projects; server/src/index.ts (which does) never runs in that deployment (`if (!process.env.VERCEL)` guard, only started by the local-only `server:dev` script). jCodeMunch find_importers/find_references on server/src/index.ts both return zero hits; repo-wide grep finds only the package.json script reference. No alternate deploy path found."
+      }
+    },
+    {
+      "id": "architecture-002",
+      "kind": "god-module",
+      "title": "generateContentPackage() in src/lib/ai/llm-client.ts mixes four unrelated AI-integration responsibilities in one 150-line function",
+      "severity": "medium",
+      "confidence": "high",
+      "identity": {
+        "path": "src/lib/ai/llm-client.ts",
+        "symbol": "generateContentPackage",
+        "assertion": "generateContentPackage (lines 316-465) is a single function that branches over 5 mutually exclusive execution modes — Electron-only local-CLI invocation via window.electronAPI.executeCLI, and three separate hand-rolled fetch() integrations against OpenAI, Anthropic, and Gemini's REST APIs — plus JSON-cleanup/parsing and a synthetic fallback-generation path, with no shared provider abstraction; jCodeMunch's hotspot scan measures this as the highest-complexity function in the repo (cyclomatic 41, max_nesting 10)."
+      },
+      "status": "new",
+      "evidence": [
+        {
+          "path": "src/lib/ai/llm-client.ts",
+          "line": 328,
+          "detail": "config.mode === 'local_cli' branch calls window.electronAPI.executeCLI, an Electron-only IPC bridge, directly from what src/lib/ presents as shared/platform-neutral runtime code."
+        },
+        {
+          "path": "src/lib/ai/llm-client.ts",
+          "line": 341,
+          "detail": "config.provider === 'openai' branch does its own fetch() to api.openai.com with bespoke request/response shaping."
+        },
+        {
+          "path": "src/lib/ai/llm-client.ts",
+          "line": 365,
+          "detail": "config.provider === 'anthropic' branch does a second, independently-shaped fetch() to api.anthropic.com, including a 'dangerously-allow-browser' header, again with no shared HTTP helper."
+        },
+        {
+          "path": "src/lib/ai/llm-client.ts",
+          "line": 388,
+          "detail": "config.provider === 'gemini' branch does a third independently-shaped fetch() to generativelanguage.googleapis.com."
+        },
+        {
+          "path": "src/lib/ai/llm-client.ts",
+          "line": 411,
+          "detail": "After all four branches, the same function also owns brace-matched JSON extraction, JSON.parse with try/catch, and construction of the final GenerationResult, plus a synthetic buildDynamicFallback() call on parse failure — none of which is provider-specific."
+        }
+      ],
+      "verification": {
+        "status": "not-required",
+        "counterevidence": [],
+        "note": ""
+      }
+    }
+  ]
+}
